@@ -16,6 +16,7 @@
 package com.embabel.movie
 
 import com.embabel.common.util.loggerFor
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
@@ -28,6 +29,7 @@ import org.springframework.web.client.RestClient
 @ConditionalOnProperty("OMDB_API_KEY")
 class OmdbClient(
     private val apiKey: String = System.getenv("OMDB_API_KEY"),
+    private val objectMapper: ObjectMapper,
 ) {
 
     private val omdbRestClient: RestClient = run {
@@ -53,7 +55,7 @@ class OmdbClient(
 
     fun getMovieByTitle(title: String): MovieResponse? {
         return try {
-            omdbRestClient.get()
+            val rawResponse = omdbRestClient.get()
                 .uri { uriBuilder ->
                     uriBuilder
                         .queryParam("apikey", apiKey)
@@ -61,7 +63,19 @@ class OmdbClient(
                         .build()
                 }
                 .retrieve()
-                .body(MovieResponse::class.java)
+                .body(String::class.java)
+
+            // This is so flaky that we log the raw response for debugging
+            try {
+                objectMapper.readValue(rawResponse, MovieResponse::class.java)
+            } catch (e: Exception) {
+                loggerFor<OmdbClient>().warn(
+                    "Error response for title: {}. Raw response: {}",
+                    title,
+                    rawResponse
+                )
+                null
+            }
         } catch (e: Exception) {
             // This API can be flaky, so we log the error and return null
             loggerFor<OmdbClient>().warn("Failed to fetch movie by title: $title", e)
@@ -102,4 +116,8 @@ data class MovieResponse(
 data class Rating(
     val Source: String,
     val Value: String
+)
+
+data class ErrorResponse(
+    val Error: String,
 )

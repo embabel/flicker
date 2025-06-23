@@ -154,6 +154,7 @@ data class MovieFinderConfig(
     val writerPersona: Persona = Roger,
     val model: String = OpenAiModels.GPT_41_MINI,
     val confirmMovieBuff: Boolean = true,
+    val bailAfterFailedSuggestions: Int = 30,
 ) {
 
     val llm = LlmOptions(
@@ -436,42 +437,31 @@ class MovieFinderAgent(
 
     /**
      * Condition method that checks if we have enough movie recommendations.
-     *
-     * This method demonstrates:
-     * - Condition-based workflow control
-     * - Configuration-driven thresholds
-     *
-     * @param processContext The process context to access the blackboard
+     * @param context The process context to access the blackboard
      * @return Boolean indicating if we have enough movies
      */
     @Condition(name = HAVE_ENOUGH_MOVIES)
-    fun haveEnoughMovies(operationContext: OperationContext): Boolean {
-        val allStreamableMovies = allStreamableMovies(operationContext)
+    fun haveEnoughMovies(context: OperationContext): Boolean {
+        val allStreamableMovies = allStreamableMovies(context)
         logger.debug("Have {} streamable movies", allStreamableMovies.size)
         return allStreamableMovies.size >= config.suggestionCount
     }
 
     /**
      * Helper method to collect all streamable movies from the blackboard.
-     *
-     * This method demonstrates:
-     * - Blackboard pattern for data access
-     * - Progress tracking and event publishing
-     * - Deduplication of results
-     *
-     * @param processContext The process context to access the blackboard
+     * @param context The process context to access the blackboard
      * @return List of all unique StreamableMovie objects
      */
     private fun allStreamableMovies(
-        operationContext: OperationContext,
+        context: OperationContext,
     ): List<StreamableMovie> {
-        val streamableMovies = operationContext
+        val streamableMovies = context
             .all<StreamableMovies>()
             .flatMap { it.movies }
             .distinctBy { it.movie.imdbID }
-        operationContext.processContext.onProcessEvent(
+        context.processContext.onProcessEvent(
             ProgressUpdateEvent(
-                agentProcess = operationContext.processContext.agentProcess,
+                agentProcess = context.processContext.agentProcess,
                 name = "Streamable movies",
                 current = streamableMovies.size,
                 total = config.suggestionCount,
@@ -488,19 +478,16 @@ class MovieFinderAgent(
      * - Combining data from multiple sources
      * - Deduplication and sorting for consistent output
      *
-     * @param operationContext The process context to access the blackboard
+     * @param context The process context to access the blackboard
      * @return List of movie titles that should be excluded from new suggestions
      */
     private fun excludedTitles(
-        operationContext: OperationContext,
-    ): List<String> {
-        val excludes = (operationContext
-            .all<SuggestedMovieTitles>()
-            .flatMap { it.titles } + allStreamableMovies(operationContext).map { it.movie.Title })
-            .distinct()
-            .sorted()
-        return excludes
-    }
+        context: OperationContext,
+    ): List<String> = context
+        .all<SuggestedMovieTitles>()
+        .flatMap { it.titles } + allStreamableMovies(context).map { it.movie.Title }
+        .distinct()
+        .sorted()
 
     /**
      * Final action that creates a personalized writeup of movie recommendations.
