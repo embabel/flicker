@@ -286,7 +286,7 @@ class MovieFinderAgent(
             Don't look for movie news but general news that might interest them.
             If possible, look for news specific to the specific request.
             Country: ${dmb.movieBuff.countryCode}
-            Current date: ${userInput.timestamp.toString()}
+            Current date: ${userInput.timestamp}
             """.trimIndent()
         )
 
@@ -348,7 +348,8 @@ class MovieFinderAgent(
         val suggestedMovies = lookUpMovies(suggestedMovieTitles)
         return streamableMovies(
             movieBuff = dmb.movieBuff,
-            suggestedMovies = suggestedMovies
+            suggestedMovies = suggestedMovies,
+            desperationMode = excludedTitles(context).size >= config.bailAfterFailedSuggestions,
         )
     }
 
@@ -390,30 +391,55 @@ class MovieFinderAgent(
     private fun streamableMovies(
         movieBuff: MovieBuff,
         suggestedMovies: SuggestedMovies,
+        desperationMode: Boolean,
     ): StreamableMovies {
+        if (desperationMode) {
+            logger.info("$$$$ In desperation mode - dispensing with free streaming availability check")
+        }
         val streamableMovieList = suggestedMovies.movies
             // Sometimes the LLM ignores being told not to
             // include movies the user has seen
-            .filterNot {
-                it.Title in movieBuff.movieRatings.map { it.title }
+            .filterNot { movie ->
+                movie.Title in movieBuff.movieRatings.map { it.title }
             }
             .mapNotNull { movie ->
                 try {
                     val allStreamingOptions =
                         streamingAvailabilityClient.getShowStreamingIn(
                             imdb = movie.imdbID,
-                            country = movieBuff.countryCode
-                        )
+                            country = movieBuff.countryCode,
+                        ).distinct()
                     val availableToUser = allStreamingOptions.filter {
                         (it.service.name.lowercase() in movieBuff.streamingServices.map { it.lowercase() })  //|| it.type == "free"
                     }
                     logger.info(
-                        "Movie {} available in [{}] on {}",
+                        "Movie {} available in [{}] on {}: {} can watch it free on {}",
                         movie.Title,
                         movieBuff.countryCode,
-                        allStreamingOptions.map { it.service.name }.sorted().joinToString(", ")
+                        allStreamingOptions.map { it.service.name }.sorted().joinToString(", "),
+                        movieBuff.name,
+                        availableToUser.map { "${it.service.name} at ${it.link}" }.sorted().joinToString(", ")
                     )
-                    if (availableToUser.isNotEmpty()) {
+                    if (allStreamingOptions.isEmpty()) {
+                        logger.info(
+                            "Movie {} not available to {} in their country {} - filtering it out",
+                            movie.Title,
+                            movieBuff.name,
+                            movieBuff.countryCode,
+                        )
+                        null
+                    } else if (availableToUser.isNotEmpty()) {
+                        StreamableMovie(
+                            movie = movie,
+                            allStreamingOptions = allStreamingOptions,
+                            availableStreamingOptions = availableToUser,
+                        )
+                    } else if (desperationMode) {
+                        logger.info(
+                            "Movie {} not available to {} on any of their streaming services but we're in desperation mode",
+                            movie.Title,
+                            movieBuff.name,
+                        )
                         StreamableMovie(
                             movie = movie,
                             allStreamingOptions = allStreamingOptions,
@@ -421,7 +447,7 @@ class MovieFinderAgent(
                         )
                     } else {
                         logger.info(
-                            "Movie {} not available to {} on any of their streaming services: {} - filtering it out",
+                            "Movie {} not available to {} on any of their streaming services and we're not yet in desperation mode {} - filtering it out",
                             movie.Title,
                             movieBuff.name,
                             movieBuff.streamingServices.sorted().joinToString(", ")
@@ -531,12 +557,18 @@ class MovieFinderAgent(
                         Director: ${it.movie.Director}
                         Actors: ${it.movie.Actors}
                         ${it.movie.Plot}
-                        Streaming available to ${dmb.movieBuff.name} on ${it.availableStreamingOptions.joinToString(", ") { "${it.service.name} at ${it.link}" }}
+                        FREE Streaming available to ${dmb.movieBuff.name} on ${
+                            it.availableStreamingOptions.joinToString(
+                                ", "
+                            ) { "${it.service.name} at ${it.link}" }
+                        }
+                        All streaming options: ${it.allStreamingOptions.joinToString(", ") { "${it.service.name} at ${it.link}" }}
                         """.trimIndent()
                     }
                 }
 
-                Format in Markdown and include links to the movies on IMDB and the streaming service link for each.
+                Format in Markdown and include links to the movies on IMDB and the streaming service link(s) for each.
+                List those with FREE streaming first and call that out.
                 """.trimIndent()
         return SuggestionWriteup(
             content = text,

@@ -10,6 +10,6 @@ class MovieBuffFinderTools(private val movieBuffRepository: MovieBuffRepository)
     fun searchByName(name: String): String {
         val found = movieBuffRepository.findByName(name)
         if (found == null) return "No entity found with name '$name'"
-        return "Found entity: ${found.name} with id: ${found.id}"
+        return "SUCCESS looking for name '$name': found entity with id: ${found.id}"
     }
 }

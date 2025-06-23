@@ -24,8 +24,11 @@ abstract class EntityFinderTools<T : Any>(
         val entityId = promptRunner
             .withToolObject(this).createObjectIfPossible<EntityId>(
                 """
-            Find a ${entityType.simpleName} based on the user input: "$content"
-            Use the tools. Consider possible variations of case.
+            Find a single ${entityType.simpleName} based on the given content
+            Use the tools to search. Consider possible variations of case and pluralization
+            and try all plausible permutations of the name.
+            
+            <userInput>$content</userInput>
             """.trimIndent()
             )
         if (entityId == null) {
