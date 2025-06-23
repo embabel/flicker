@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.embabel.template
+package com.embabel.movie
 
 import com.embabel.agent.config.annotation.EnableAgentShell
 import com.embabel.agent.config.annotation.LoggingTheme
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
+@ConfigurationPropertiesScan
 @EnableAgentShell(loggingTheme = LoggingTheme.STAR_WARS)
-class ProjectNameApplication
+class MovieFinderApplication
 
 fun main(args: Array<String>) {
-    runApplication<ProjectNameApplication>(*args)
+    runApplication<MovieFinderApplication>(*args)
 }

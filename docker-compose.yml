@@ -1,0 +1,12 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    ports:
+      - "5432:5432"
+    volumes:
+      - ~/apps/postgres/movie-finder:/var/lib/postgresql/data  # Project-specific folder
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - POSTGRES_PASSWORD=${MF_PGPASSWORD:-look_to_the_stars}
+      - POSTGRES_USER=${MF_PGUSER:-embabel}
+      - POSTGRES_DB=movie-finder

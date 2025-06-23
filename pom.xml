@@ -8,11 +8,11 @@
         <version>3.5.0</version>
         <relativePath/> <!-- Lookup parent from repository -->
     </parent>
-    <groupId>com.embabel.template</groupId>
-    <artifactId>ProjectName</artifactId>
+    <groupId>com.embabel.example</groupId>
+    <artifactId>MovieFinder</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>My first agent</name>
+    <name>Movie finder agent</name>
     <description>Generated agent project</description>
 
     <properties>
@@ -31,6 +31,17 @@
         </dependency>
 
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
             <groupId>com.embabel.agent</groupId>
             <artifactId>embabel-agent-test</artifactId>
             <version>${embabel-agent.version}</version>
@@ -43,6 +54,12 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.ninja-squad</groupId>
+            <artifactId>springmockk</artifactId>
+            <version>4.0.2</version>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 
@@ -63,6 +80,7 @@
                     </args>
                     <compilerPlugins>
                         <plugin>spring</plugin>
+                        <plugin>jpa</plugin>
                     </compilerPlugins>
                 </configuration>
                 <dependencies>
