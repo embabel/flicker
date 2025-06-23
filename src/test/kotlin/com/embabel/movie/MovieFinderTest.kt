@@ -16,9 +16,6 @@
 package com.embabel.movie
 
 import com.embabel.agent.api.common.OperationContext
-import com.embabel.movie.MovieBuffRepository
-import com.embabel.movie.MovieFinder
-import com.embabel.movie.MovieFinderConfig
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -39,7 +36,7 @@ class MovieFinderTest {
             val prompt = slot<String>()
             every { mockOperationContext.promptRunner(any()).generateText(capture(prompt)) } returns "test"
             val movieFinder =
-                MovieFinder(mockk(), mockk(), repository, MovieFinderConfig())
+                MovieFinderAgent(mockk(), mockk(), repository, MovieFinderConfig())
             val movieBuff = repository.findAll().first()
 
             val dmb = movieFinder.analyzeTasteProfile(movieBuff, mockOperationContext)

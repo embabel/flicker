@@ -81,7 +81,7 @@ class MovieFinderEndToEndTest {
             }.random()
         }
 
-        val mf = MovieFinder(
+        val mf = MovieFinderAgent(
             mockOmdbClient, mockStreamingAvailabilityClient, movieBuffRepository,
             MovieFinderConfig(confirmMovieBuff = false),
         )
@@ -103,7 +103,7 @@ class MovieFinderEndToEndTest {
         val movieBuffRepository = TODO()
         val mockStreamingAvailabilityClient = mockk<StreamingAvailabilityClient>()
         every { mockStreamingAvailabilityClient.getShowStreamingIn(any(), any()) } returns emptyList()
-        val mf = MovieFinder(
+        val mf = MovieFinderAgent(
             mockOmdbClient, mockStreamingAvailabilityClient, movieBuffRepository,
             MovieFinderConfig(confirmMovieBuff = false)
         )
@@ -125,7 +125,7 @@ class MovieFinderEndToEndTest {
         val movieBuffRepository = TODO()
         val mockStreamingAvailabilityClient = mockk<StreamingAvailabilityClient>()
         every { mockStreamingAvailabilityClient.getShowStreamingIn(any(), any()) } returns emptyList()
-        val mf = MovieFinder(
+        val mf = MovieFinderAgent(
             mockOmdbClient, mockStreamingAvailabilityClient, movieBuffRepository,
             MovieFinderConfig()
         )

@@ -27,14 +27,12 @@ import com.embabel.agent.domain.io.UserInput
 import com.embabel.agent.domain.library.HasContent
 import com.embabel.agent.domain.library.Person
 import com.embabel.agent.domain.library.RelevantNewsStories
-import com.embabel.agent.domain.persistence.findOneFromContent
 import com.embabel.agent.event.ProgressUpdateEvent
 import com.embabel.agent.prompt.persona.Persona
 import com.embabel.common.ai.model.LlmOptions
 import com.embabel.common.ai.model.ModelSelectionCriteria.Companion.byName
 import jakarta.persistence.*
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Profile
 import org.springframework.data.jpa.repository.JpaRepository
@@ -113,7 +111,12 @@ data class SuggestionWriteup(
     override val content: String,
 ) : HasContent
 
-interface MovieBuffRepository : JpaRepository<MovieBuff, String>
+
+interface MovieBuffRepository : JpaRepository<MovieBuff, String> {
+
+    fun findByName(name: String): MovieBuff?
+
+}
 
 @Service
 class MovieBuffService(
@@ -180,15 +183,14 @@ data class MovieFinderConfig(
 @Agent(
     description = "Find movies a person hasn't seen and may find interesting"
 )
-@ConditionalOnBean(OmdbClient::class, StreamingAvailabilityClient::class)
-class MovieFinder(
+class MovieFinderAgent(
     private val omdbClient: OmdbClient,
     private val streamingAvailabilityClient: StreamingAvailabilityClient,
     private val movieBuffRepository: MovieBuffRepository,
     private val config: MovieFinderConfig,
 ) {
 
-    private val logger = LoggerFactory.getLogger(MovieFinder::class.java)
+    private val logger = LoggerFactory.getLogger(MovieFinderAgent::class.java)
 
     /**
      * First action in the workflow that identifies a MovieBuff based on user input.
@@ -204,18 +206,14 @@ class MovieFinder(
      */
     @Action(description = "Retrieve a MovieBuff based on the user input")
     fun findMovieBuff(userInput: UserInput, context: OperationContext): MovieBuff? =
-        movieBuffRepository.findOneFromContent(
-            content = userInput.content,
-            llm = LlmOptions(),
-            idGetter = { it.name },
-            context = context,
+        MovieBuffFinderTools(movieBuffRepository).findEntity(
+            context.promptRunner(),
+            userInput.content,
         ) { movieBuff ->
-            if (config.confirmMovieBuff) {
-                ConfirmationRequest(
-                    movieBuff.match,
-                    "Please confirm whether this is the movie buff you meant: ${movieBuff.match.name}",
-                )
-            } else null
+            ConfirmationRequest(
+                movieBuff,
+                "Please confirm whether this is the movie buff you meant: ${movieBuff.name}",
+            )
         }
 
 
