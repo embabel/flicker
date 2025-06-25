@@ -18,6 +18,7 @@ package com.embabel.movie
 import com.embabel.agent.config.annotation.EnableAgentShell
 import com.embabel.agent.config.annotation.EnableAgents
 import com.embabel.agent.config.annotation.LoggingThemes
+import com.embabel.agent.config.annotation.McpServers
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.boot.runApplication
@@ -27,7 +28,7 @@ import org.springframework.boot.runApplication
 @EnableAgentShell
 @EnableAgents(
     loggingTheme = LoggingThemes.STAR_WARS,
-    mcpClients = ["docker", "docker-desktop"],
+    mcpServers = [McpServers.DOCKER, McpServers.DOCKER_DESKTOP],
 )
 class MovieFinderApplication
 

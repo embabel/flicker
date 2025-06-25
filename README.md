@@ -19,7 +19,88 @@
 
 # Movie Finder Agent
 
-## TODO KEYS you'll need
+## API keys you'll need
+
+export OMDB_API_KEY="your_omdb_key"           # http://www.omdbapi.com/
+export X_RAPIDAPI_KEY="your_rapidapi_key"
+
+### 🎬 **Advanced: Movie Recommendation Engine**
+
+> **Available in:** Kotlin | **Concept:** Complex Domain-Driven Workflows
+
+An intelligent movie recommendation agent that analyzes taste profiles and suggests streaming-available movies.
+
+**What It Teaches:**
+
+- 🏗️ **Domain-Driven Design** with rich domain models
+- 🔄 **Complex workflows** with conditions and retries
+- 📊 **Spring Data integration** with repositories
+- 🎭 **Persona-based prompting** for creative content
+- 🛠️ **Multiple API integration** (OMDB, streaming services)
+- 📈 **Progress tracking** and event publishing
+- 🤝 **Human-in-the-loop** confirmations
+
+**Domain Model:**
+
+```kotlin
+data class MovieBuff(
+    override val name: String,
+    val movieRatings: List<MovieRating>,
+    val countryCode: String,
+    val streamingServices: List<String>
+) : Person
+
+data class DecoratedMovieBuff(
+    val movieBuff: MovieBuff,
+    val tasteProfile: String  // AI-generated analysis
+)
+```
+
+**How It Works:**
+
+1. Find MovieBuff from repository (with confirmation)
+2. Analyze their taste profile using AI
+3. Research current news for inspiration
+4. Generate movie suggestions (excluding seen movies)
+5. Filter by streaming availability
+6. Create Roger Ebert-style writeup
+
+**Try It:**
+
+```bash
+# Requires OMDB_API_KEY and X_RAPIDAPI_KEY
+"Suggest movies for Rod tonight"
+```
+
+**Key Spring Patterns:**
+
+```kotlin
+@ConfigurationProperties(prefix = "embabel.examples.moviefinder")
+data class MovieFinderConfig(
+    val suggestionCount: Int = 5,
+    val suggesterPersona: Persona = Roger,
+    val model: String = OpenAiModels.GPT_41_MINI
+)
+
+interface MovieBuffRepository : CrudRepository<MovieBuff, String>
+```
+
+**Advanced Workflow Control:**
+
+```kotlin
+@Action(
+    post = [HAVE_ENOUGH_MOVIES],  // Condition check
+    canRerun = true               // Retry if needed
+)
+fun suggestMovies(/* params */): StreamableMovies
+
+@Condition(name = HAVE_ENOUGH_MOVIES)
+fun haveEnoughMovies(context: OperationContext): Boolean
+```
+
+**Location:** `examples-kotlin/src/main/kotlin/com/embabel/example/movie/`
+
+---
 
 # To run
 
