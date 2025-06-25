@@ -31,6 +31,7 @@ import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.util.*
 
 class MovieFinderEndToEndTest {
 
@@ -66,7 +67,9 @@ class MovieFinderEndToEndTest {
                 MovieResponse::class.java
             )
         }
-        val movieBuffRepository = TODO()
+        val movieBuffRepository = mockk<MovieBuffRepository>()
+        every { movieBuffRepository.findById(any()) } returns Optional.of(rod())
+
         val mockStreamingAvailabilityClient = mockk<StreamingAvailabilityClient>()
         val mockStreamingOption = mockk<StreamingOption>()
         every { mockStreamingOption.service.name } returns "Netflix"
@@ -100,7 +103,8 @@ class MovieFinderEndToEndTest {
         every { mockOmdbClient.getMovieByTitle(any()) } returns DummyInstanceCreator.BigLebowski.createDummyInstance(
             MovieResponse::class.java
         )
-        val movieBuffRepository = TODO()
+        val movieBuffRepository = mockk<MovieBuffRepository>()
+        every { movieBuffRepository.findById(any()) } returns Optional.of(rod())
         val mockStreamingAvailabilityClient = mockk<StreamingAvailabilityClient>()
         every { mockStreamingAvailabilityClient.getShowStreamingIn(any(), any()) } returns emptyList()
         val mf = MovieFinderAgent(
@@ -122,7 +126,8 @@ class MovieFinderEndToEndTest {
         every { mockOmdbClient.getMovieByTitle(any()) } returns DummyInstanceCreator.BigLebowski.createDummyInstance(
             MovieResponse::class.java
         )
-        val movieBuffRepository = TODO()
+        val movieBuffRepository = mockk<MovieBuffRepository>()
+        every { movieBuffRepository.findById(any()) } returns Optional.of(rod())
         val mockStreamingAvailabilityClient = mockk<StreamingAvailabilityClient>()
         every { mockStreamingAvailabilityClient.getShowStreamingIn(any(), any()) } returns emptyList()
         val mf = MovieFinderAgent(

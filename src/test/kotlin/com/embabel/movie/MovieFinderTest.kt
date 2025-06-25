@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import java.util.*
 
 class MovieFinderTest {
 
@@ -31,7 +32,9 @@ class MovieFinderTest {
 
         @Test
         fun `test analyze taste profile`() {
-            val repository: MovieBuffRepository = TODO()
+            val repository = mockk<MovieBuffRepository>()
+            every { repository.findById(any()) } returns Optional.of(rod())
+            every { repository.findAll() } returns listOf(rod())
             val mockOperationContext = mockk<OperationContext>()
             val prompt = slot<String>()
             every { mockOperationContext.promptRunner(any()).generateText(capture(prompt)) } returns "test"

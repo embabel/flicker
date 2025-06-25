@@ -211,10 +211,13 @@ class MovieFinderAgent(
             context.promptRunner(),
             userInput.content,
         ) { movieBuff ->
-            ConfirmationRequest(
-                movieBuff,
-                "Please confirm whether this is the movie buff you meant: ${movieBuff.name}",
-            )
+            if (!config.confirmMovieBuff) {
+                null
+            } else
+                ConfirmationRequest(
+                    movieBuff,
+                    "Please confirm whether this is the movie buff you meant: ${movieBuff.name}",
+                )
         }
 
 
