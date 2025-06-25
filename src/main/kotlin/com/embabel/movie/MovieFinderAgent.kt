@@ -312,7 +312,8 @@ class MovieFinderAgent(
     fun suggestMovies(
         userInput: UserInput,
         dmb: DecoratedMovieBuff,
-        context: ActionContext,
+        relevantNewsStories: RelevantNewsStories,
+        context: OperationContext,
     ): StreamableMovies {
         val suggestedMovieTitles = context.promptRunner(
             config.llm.withTemperature(1.3),
@@ -341,6 +342,7 @@ class MovieFinderAgent(
             ${excludedTitles(context).joinToString("\n")}
 
             Consider also the following news stories for topical inspiration:
+            ${relevantNewsStories.contribution()}
             """.trimIndent(),
         )
         // Be sure to bind the suggested movie titles to the blackboard

@@ -16,14 +16,19 @@
 package com.embabel.movie
 
 import com.embabel.agent.config.annotation.EnableAgentShell
-import com.embabel.agent.config.annotation.LoggingTheme
+import com.embabel.agent.config.annotation.EnableAgents
+import com.embabel.agent.config.annotation.LoggingThemes
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
 @ConfigurationPropertiesScan
-@EnableAgentShell(loggingTheme = LoggingTheme.STAR_WARS)
+@EnableAgentShell
+@EnableAgents(
+    loggingTheme = LoggingThemes.STAR_WARS,
+    mcpClients = ["docker", "docker-desktop"],
+)
 class MovieFinderApplication
 
 fun main(args: Array<String>) {
