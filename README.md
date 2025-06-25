@@ -69,7 +69,10 @@ First, start the PostgresSQL database using Docker with:
 docker compose up
 ```
 
-Now you can start the agent using the shell script `./shell.sh` or under your IDE.
+Now you can start the agent under Spring Shell using the shell script `./shell.sh` or run `FlickerApplication` in your
+IDE.
+
+Example command:
 
 ```bash
 x "Suggest movies for Rod tonight. He'd like to see a film set in mountains"
@@ -77,7 +80,9 @@ x "Suggest movies for Rod tonight. He'd like to see a film set in mountains"
 
 The logging will channel [Severance](https://www.imdb.com/title/tt11280740/).
 
-**Key Patterns:**
+## Key Patterns
+
+### Spring Configuration
 
 ```kotlin
 @ConfigurationProperties(prefix = "embabel.examples.moviefinder")
@@ -90,7 +95,7 @@ data class MovieFinderConfig(
 interface MovieBuffRepository : CrudRepository<MovieBuff, String>
 ```
 
-**Advanced Workflow Control:**
+### Advanced Workflow Control
 
 ```kotlin
 @Action(
@@ -102,29 +107,4 @@ fun suggestMovies(/* params */): StreamableMovies
 @Condition(name = HAVE_ENOUGH_MOVIES)
 fun haveEnoughMovies(context: OperationContext): Boolean
 ```
-
-**Location:** `examples-kotlin/src/main/kotlin/com/embabel/example/movie/`
-
----
-
-# To run
-
-Run the shell script to start Embabel under Spring Shell:
-
-```bash
-cd scripts
-./shell.sh
-```
-
-There is a single example agent, `WriteAndReviewAgent`.
-It will be under your package name.
-It uses one LLM with a high temperature and creative persona to write a story based on your input,
-then another LLM with a low temperature and different persona to review the story.
-
-When the Embabel shell comes up, use the story agent like this:
-
-```
-x "Tell me a story about...[your topic]"
-```
-
 
