@@ -19,15 +19,6 @@
 
 # Movie Finder Agent
 
-## API keys you'll need
-
-export OMDB_API_KEY="your_omdb_key"           # http://www.omdbapi.com/
-export X_RAPIDAPI_KEY="your_rapidapi_key"
-
-### 🎬 **Advanced: Movie Recommendation Engine**
-
-> **Available in:** Kotlin | **Concept:** Complex Domain-Driven Workflows
-
 An intelligent movie recommendation agent that analyzes taste profiles and suggests streaming-available movies.
 
 **What It Teaches:**
@@ -40,7 +31,12 @@ An intelligent movie recommendation agent that analyzes taste profiles and sugge
 - 📈 **Progress tracking** and event publishing
 - 🤝 **Human-in-the-loop** confirmations
 
-**Domain Model:**
+## API keys you'll need
+
+export OMDB_API_KEY="your_omdb_key"           # http://www.omdbapi.com/
+export X_RAPIDAPI_KEY="your_rapidapi_key"
+
+## Domain Model
 
 ```kotlin
 data class MovieBuff(
@@ -56,7 +52,7 @@ data class DecoratedMovieBuff(
 )
 ```
 
-**How It Works:**
+## How It Works
 
 1. Find MovieBuff from repository (with confirmation)
 2. Analyze their taste profile using AI
@@ -65,14 +61,23 @@ data class DecoratedMovieBuff(
 5. Filter by streaming availability
 6. Create Roger Ebert-style writeup
 
-**Try It:**
+## Running
+
+First, start the PostgresSQL database using Docker with:
 
 ```bash
-# Requires OMDB_API_KEY and X_RAPIDAPI_KEY
-"Suggest movies for Rod tonight"
+docker compose up
 ```
 
-**Key Spring Patterns:**
+Now you can start the agent using the shell script `./shell.sh` or under your IDE.
+
+```bash
+x "Suggest movies for Rod tonight. He'd like to see a film set in mountains"
+```
+
+The logging will channel [Severance](https://www.imdb.com/title/tt11280740/).
+
+**Key Patterns:**
 
 ```kotlin
 @ConfigurationProperties(prefix = "embabel.examples.moviefinder")

@@ -27,11 +27,11 @@ import org.springframework.boot.runApplication
 @ConfigurationPropertiesScan
 @EnableAgentShell
 @EnableAgents(
-    loggingTheme = LoggingThemes.STAR_WARS,
+    loggingTheme = LoggingThemes.SEVERANCE,
     mcpServers = [McpServers.DOCKER, McpServers.DOCKER_DESKTOP],
 )
-class MovieFinderApplication
+class FlickerApplication
 
 fun main(args: Array<String>) {
-    runApplication<MovieFinderApplication>(*args)
+    runApplication<FlickerApplication>(*args)
 }
