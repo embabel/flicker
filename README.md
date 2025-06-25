@@ -33,8 +33,12 @@ An intelligent movie recommendation agent that analyzes taste profiles and sugge
 
 ## API keys you'll need
 
-export OMDB_API_KEY="your_omdb_key"           # http://www.omdbapi.com/
-export X_RAPIDAPI_KEY="your_rapidapi_key"
+- `export OMDB_API_KEY=<your_omdb_key>`
+- `export X_RAPIDAPI_KEY=<your_rapidapi_key>`
+
+See [Open Movie Database](https://www.omdbapi.com/apikey.aspx)
+and [Rapid API Hub](https://rapidapi.com/products/api-hub/)
+for information about required integrations, and to obtain API keys.
 
 ## Domain Model
 
