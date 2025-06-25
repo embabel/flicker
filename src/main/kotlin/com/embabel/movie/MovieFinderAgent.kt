@@ -25,58 +25,17 @@ import com.embabel.agent.core.all
 import com.embabel.agent.core.hitl.ConfirmationRequest
 import com.embabel.agent.domain.io.UserInput
 import com.embabel.agent.domain.library.HasContent
-import com.embabel.agent.domain.library.Person
 import com.embabel.agent.domain.library.RelevantNewsStories
 import com.embabel.agent.event.ProgressUpdateEvent
 import com.embabel.agent.prompt.persona.Persona
 import com.embabel.common.ai.model.LlmOptions
 import com.embabel.common.ai.model.ModelSelectionCriteria.Companion.byName
-import jakarta.persistence.*
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Profile
-import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
+import kotlin.math.min
 
 typealias OneThroughTen = Int
-
-@Entity
-data class MovieBuff(
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    val id: String? = null,
-    override val name: String,
-    @OneToMany(fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
-    val movieRatings: List<MovieRating>,
-    val countryCode: String,
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
-        name = "movie_buff_hobbies",
-        joinColumns = [JoinColumn(name = "movie_buff_id")],
-    )
-    @Column(name = "hobby")
-    val hobbies: List<String>,
-    val about: String,
-    val streamingServices: List<String>,
-) : Person {
-
-    /**
-     * We use this so we don't overwhelm the prompt
-     */
-    fun randomRatings(n: Int): List<MovieRating> {
-        return movieRatings.shuffled().take(n)
-    }
-}
-
-@Entity
-data class MovieRating(
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private val id: String? = null,
-    val rating: OneThroughTen,
-    val title: String,
-)
 
 data class DecoratedMovieBuff(
     val movieBuff: MovieBuff,
@@ -112,28 +71,6 @@ data class SuggestionWriteup(
 ) : HasContent
 
 
-interface MovieBuffRepository : JpaRepository<MovieBuff, String> {
-
-    fun findByName(name: String): MovieBuff?
-
-}
-
-@Service
-class MovieBuffService(
-    private val movieBuffRepository: MovieBuffRepository,
-) {
-
-    @Transactional
-    fun save(movieBuff: MovieBuff): MovieBuff {
-        return movieBuffRepository.save(movieBuff)
-    }
-
-    @Transactional(readOnly = true)
-    fun findAll(): List<MovieBuff> {
-        return movieBuffRepository.findAll()
-    }
-}
-
 val Roger = Persona(
     name = "Roger",
     persona = "A creative movie critic who channels the famous movie critic Roger Ebert",
@@ -141,7 +78,7 @@ val Roger = Persona(
     objective =
         """
         Suggest movies that will extend as well as entertain the user.
-        Share the love of cinema and inspire the user to watch, learn and think.
+        Share your love of cinema and inspire the user to watch, learn and think.
         """.trimIndent(),
 )
 
@@ -251,6 +188,7 @@ class MovieFinderAgent(
                 Return a summary of their taste profile as you understand it,
                 in ${config.tasteProfileWordCount} words or less. Cover what they like and don't like.
                 """.trimIndent()
+        logger.info("Analyzed taste profile for {}:\n{}", movieBuff.name, tasteProfile)
         return DecoratedMovieBuff(
             movieBuff = movieBuff,
             tasteProfile = tasteProfile,
@@ -417,7 +355,7 @@ class MovieFinderAgent(
                     val availableToUser = allStreamingOptions.filter {
                         (it.service.name.lowercase() in movieBuff.streamingServices.map { it.lowercase() })  //|| it.type == "free"
                     }
-                    logger.info(
+                    logger.debug(
                         "Movie {} available in [{}] on {}: {} can watch it free on {}",
                         movie.Title,
                         movieBuff.countryCode,
@@ -494,7 +432,7 @@ class MovieFinderAgent(
             ProgressUpdateEvent(
                 agentProcess = context.processContext.agentProcess,
                 name = "Streamable movies",
-                current = streamableMovies.size,
+                current = min(streamableMovies.size, config.suggestionCount),
                 total = config.suggestionCount,
             )
         )
