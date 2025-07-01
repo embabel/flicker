@@ -430,7 +430,7 @@ class MovieFinderAgent(
             .distinctBy { it.movie.imdbID }
         context.processContext.onProcessEvent(
             ProgressUpdateEvent(
-                agentProcess = context.processContext.agentProcess,
+                agentProcess = context.agentProcess,
                 name = "Streamable movies",
                 current = min(streamableMovies.size, config.suggestionCount),
                 total = config.suggestionCount,
