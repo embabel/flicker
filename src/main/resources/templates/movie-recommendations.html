@@ -1,66 +1,27 @@
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="~{common/layout :: layout(~{::title}, ~{::section})}">
 <head>
-    <title th:text="${travelPlan.proposal.title}">Embabel Journey Planner</title>
+    <title th:text="${movieRecommendations.caption}">Embabel Movie Finder</title>
     <th:block th:fragment="extraHeadContent">
         <script src="https://unpkg.com/htmx.org@2.0.5"></script>
     </th:block>
 </head>
 <body>
 <section>
-    <div th:if="${travelPlan != null}">
-        <h2 th:text="${travelPlan.proposal.title}"></h2>
+    <div th:if="${movieRecommendations != null}">
+        <h2 th:text="${movieRecommendations.caption}"></h2>
+
+        <p th:utext="${movieRecommendations.writeup}"></p>
+
 
         <div style="margin-bottom: 20px;">
-            <a href="/travel/journey" target="_blank" rel="noopener noreferrer"
+            <a href="/" target="_blank" rel="noopener noreferrer"
                class="friendly-map-btn">
-                Plan Another Journey
+                Look for more movies
             </a>
         </div>
-
-
-        <div th:if="${travelPlan.brief != null}">
-            <h3>Brief</h3>
-            <p style="margin-bottom: 0.75rem;">From [[${travelPlan.brief.from}]] to [[${travelPlan.brief.to}]]
-                from [[${#temporals.format(travelPlan.brief.departureDate, 'dd MMM yyyy')}]] to
-                [[${#temporals.format(travelPlan.brief.returnDate, 'dd MMM yyyy')}]]</p>
-            <i style="margin-bottom: 1rem; display:block;">[[${travelPlan.brief.brief}]]</i>
-
-            <ul class="travelers-list">
-                <li th:each="traveler : ${travelPlan.travelers.travelers}">
-                    <strong th:text="${traveler.name}"></strong>
-                    <p th:text="${traveler.about}"></p>
-                </li>
-            </ul>
-
-            <h3>Plan</h3>
-            <div style="margin-bottom: 20px;">
-                <a th:href="${travelPlan.journeyMapUrl}" target="_blank" rel="noopener noreferrer"
-                   class="friendly-map-btn">
-                    Interactive Map
-                </a>
-            </div>
-
-            <div th:utext="${travelPlan.proposal.plan}" style="margin-bottom: 1rem;"></div>
-            <h3>Stays</h3>
-            <ul style="margin-bottom: 1rem;">
-                <li th:each="stay : ${travelPlan.stays}" style="margin-bottom: 0.5rem;">
-                    <a th:href="${stay.airbnbUrl}" target="_blank" rel="noopener noreferrer"><span
-                            th:text="${stay.stayingAt() + ' on Airbnb for ' + stay.days.size() + ' nights'}"></span></a>
-                </li>
-            </ul>
-
-            <div th:if="${travelPlan.proposal.pageLinks != null && !#lists.isEmpty(travelPlan.proposal.pageLinks)}">
-                <h3>Useful Links</h3>
-                <ul style="margin-bottom: 1rem;">
-                    <li th:each="page : ${travelPlan.proposal.pageLinks}" style="margin-bottom: 0.5rem;">
-                        <a th:href="${page.url}" target="_blank" rel="noopener noreferrer"><span
-                                th:text="${page.summary}"></span></a>
-                    </li>
-                </ul>
-            </div>
-        </div>
     </div>
+
 
     <hr class="dotted"/>
     <div id="currenxt-plan" th:replace="~{common/fragments/plan-complete :: plan-complete}"></div>

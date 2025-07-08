@@ -17,6 +17,7 @@ package com.embabel.movie.agent
 
 import com.embabel.agent.api.annotation.*
 import com.embabel.agent.api.common.OperationContext
+import com.embabel.agent.api.common.create
 import com.embabel.agent.api.common.createObject
 import com.embabel.agent.config.models.OpenAiModels
 import com.embabel.agent.core.CoreToolGroups
@@ -32,6 +33,7 @@ import com.embabel.movie.service.MovieResponse
 import com.embabel.movie.service.OmdbClient
 import com.embabel.movie.service.StreamingAvailabilityClient
 import com.embabel.movie.service.StreamingOption
+import com.fasterxml.jackson.annotation.JsonPropertyDescription
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Profile
@@ -76,6 +78,7 @@ data class StreamableMovie(
  * Structured recommendations
  */
 data class MovieRecommendations(
+    val caption: String,
     val writeup: String,
     val movies: List<StreamableMovie>,
 ) : HasContent {
@@ -455,38 +458,44 @@ class MovieFinderAgent(
         val writeup = context.promptRunner(
             llm = config.llm,
             promptContributors = listOf(config.suggesterPersona)
-        ) generateText
-                """
+        ).create<MovieWriteup>(
+            """
                 Write up a recommendation of ${config.suggestionCount} movies in ${config.writeupWordCount} words
                 for ${dmb.movieBuff.name}
                 based on the following information:
                 Their hobbies are ${dmb.movieBuff.hobbies.joinToString(", ")}
                 Their movie taste profile is ${dmb.tasteProfile}
                 A bit about them: "${dmb.movieBuff.about}"
+                
+                Include a CONCISE caption for the writeup. It should not include the movie buff's name.
 
                 The streamable movie recommendations are:
                 ${
-                    recommendedMovies.joinToString("\n\n") {
-                        """
+                recommendedMovies.joinToString("\n\n") {
+                    """
                         ${it.movie.Title} (${it.movie.Year}): ${it.movie.imdbID}
                         Director: ${it.movie.Director}
                         Actors: ${it.movie.Actors}
                         ${it.movie.Plot}
                         FREE Streaming available to ${dmb.movieBuff.name} on ${
-                            it.availableStreamingOptions.joinToString(
-                                ", "
-                            ) { "${it.service.name} at ${it.link}" }
-                        }
+                        it.availableStreamingOptions.joinToString(
+                            ", "
+                        ) { "${it.service.name} at ${it.link}" }
+                    }
                         All streaming options: ${it.allStreamingOptions.joinToString(", ") { "${it.service.name} at ${it.link}" }}
                         """.trimIndent()
-                    }
                 }
+            }
 
-                Format in Markdown and include links to the movies on IMDB and the streaming service link(s) for each.
+                Format in HTML.
+                Use unordered lists as appropriate.
+                Start any headings at <h4>
+                Include links to the movies on IMDB and the streaming service link(s) for each.
                 List those with FREE streaming first and call that out.
-                """.trimIndent()
+                """.trimIndent())
         return MovieRecommendations(
-            writeup = writeup,
+            caption = writeup.caption,
+            writeup = writeup.writeup,
             movies = recommendedMovies,
         )
     }
@@ -495,3 +504,9 @@ class MovieFinderAgent(
         const val HAVE_ENOUGH_MOVIES = "haveEnoughMovies"
     }
 }
+
+private data class MovieWriteup(
+    @field:JsonPropertyDescription("Caption for the writeup, to be used as a title")
+    val caption: String,
+    val writeup: String,
+)

@@ -18,6 +18,7 @@ package com.embabel.movie.web
 import com.embabel.agent.core.AgentPlatform
 import com.embabel.agent.core.ProcessOptions
 import com.embabel.agent.core.Verbosity
+import com.embabel.agent.web.htmx.GenericProcessingValues
 import com.embabel.movie.agent.MovieRequest
 import com.embabel.movie.domain.MovieBuffRepository
 import com.embabel.movie.domain.rod
@@ -50,13 +51,13 @@ class MovieHtmxController(
         return "find-movies-form"
     }
 
-    @PostMapping("/plan")
+    @PostMapping("/find-movies")
     fun findMovies(
         @ModelAttribute movieRequest: MovieRequest,
         model: Model
     ): String {
 
-        // Convert form travelers to domain objects
+        // Convert form to domain objects
         val agent = agentPlatform.agents().singleOrNull { it.name.lowercase().contains("movie") }
             ?: error("No  movie agent found. Please ensure the movie agent is registered.")
 
@@ -73,7 +74,13 @@ class MovieHtmxController(
         )
 
         model.addAttribute("movieRequest", movieRequest)
-        model.addAttribute("processId", agentProcess.id)
+        GenericProcessingValues(
+            agentProcess = agentProcess,
+            pageTitle = "Finding Movies",
+            detail = movieRequest.preference,
+            resultModelKey = "movieRecommendations",
+            successView = "movie-recommendations",
+        ).addToModel(model)
         agentPlatform.start(agentProcess)
         return "common/processing"
     }

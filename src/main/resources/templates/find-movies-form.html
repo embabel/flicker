@@ -6,16 +6,15 @@
 <body>
 <section>
     <h2>Embabel Movie Finder</h2>
-    <form action="/travel/journey/plan" method="post" th:object="${movieRequest}">
+    <form action="/find-movies" method="post" th:object="${movieRequest}">
         <div class="form-group">
             <label for="brief">What I want</label>
             <textarea id="brief" name="brief" rows="3" cols="40" th:field="*{preference}" required></textarea>
         </div>
-
-
+        
         <button class="submit-btn" type="submit" style="margin-top: 20px;">Find Movies</button>
     </form>
-     
+
 </section>
 </body>
 </html>
