@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.embabel.movie
+package com.embabel.movie.agent
 
 import com.embabel.agent.api.annotation.*
-import com.embabel.agent.api.common.ActionContext
 import com.embabel.agent.api.common.OperationContext
 import com.embabel.agent.api.common.createObject
 import com.embabel.agent.config.models.OpenAiModels
 import com.embabel.agent.core.CoreToolGroups
 import com.embabel.agent.core.all
-import com.embabel.agent.core.hitl.ConfirmationRequest
 import com.embabel.agent.domain.io.UserInput
 import com.embabel.agent.domain.library.HasContent
 import com.embabel.agent.domain.library.RelevantNewsStories
@@ -30,6 +28,13 @@ import com.embabel.agent.event.ProgressUpdateEvent
 import com.embabel.agent.prompt.persona.Persona
 import com.embabel.common.ai.model.LlmOptions
 import com.embabel.common.ai.model.ModelSelectionCriteria.Companion.byName
+import com.embabel.movie.domain.MovieBuff
+import com.embabel.movie.domain.MovieBuffRepository
+import com.embabel.movie.domain.rod
+import com.embabel.movie.service.MovieResponse
+import com.embabel.movie.service.OmdbClient
+import com.embabel.movie.service.StreamingAvailabilityClient
+import com.embabel.movie.service.StreamingOption
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Profile
@@ -66,9 +71,16 @@ data class StreamableMovie(
     val allStreamingOptions: List<StreamingOption>,
 )
 
-data class SuggestionWriteup(
-    override val content: String,
-) : HasContent
+/**
+ * Structured recommendations
+ */
+data class MovieRecommendations(
+    val writeup: String,
+    val movies: List<StreamableMovie>,
+) : HasContent {
+
+    override val content get() = writeup
+}
 
 
 val Roger = Persona(
@@ -130,32 +142,9 @@ class MovieFinderAgent(
 
     private val logger = LoggerFactory.getLogger(MovieFinderAgent::class.java)
 
-    /**
-     * First action in the workflow that identifies a MovieBuff based on user input.
-     *
-     * This action demonstrates:
-     * - Entity retrieval from a repository
-     * - Natural language matching for entity lookup
-     * - Human-in-the-loop confirmation pattern
-     *
-     * @param userInput The input from the user containing information to identify a MovieBuff
-     * @param context The action context providing access to framework capabilities
-     * @return The identified MovieBuff or null if none found
-     */
-    @Action(description = "Retrieve a MovieBuff based on the user input")
+    @Action(description = "Retrieve a MovieBuff")
     fun findMovieBuff(userInput: UserInput, context: OperationContext): MovieBuff? =
-        MovieBuffFinderTools(movieBuffRepository).findEntity(
-            context.promptRunner(),
-            userInput.content,
-        ) { movieBuff ->
-            if (!config.confirmMovieBuff) {
-                null
-            } else
-                ConfirmationRequest(
-                    movieBuff,
-                    "Please confirm whether this is the movie buff you meant: ${movieBuff.name}",
-                )
-        }
+        rod()
 
 
     /**
@@ -478,9 +467,10 @@ class MovieFinderAgent(
     fun writeUpSuggestions(
         dmb: DecoratedMovieBuff,
         streamableMovies: StreamableMovies,
-        context: ActionContext,
-    ): SuggestionWriteup {
-        val text = context.promptRunner(
+        context: OperationContext,
+    ): MovieRecommendations {
+        val recommendedMovies = allStreamableMovies(context)
+        val writeup = context.promptRunner(
             llm = config.llm,
             promptContributors = listOf(config.suggesterPersona)
         ) generateText
@@ -494,7 +484,7 @@ class MovieFinderAgent(
 
                 The streamable movie recommendations are:
                 ${
-                    allStreamableMovies(context).joinToString("\n\n") {
+                    recommendedMovies.joinToString("\n\n") {
                         """
                         ${it.movie.Title} (${it.movie.Year}): ${it.movie.imdbID}
                         Director: ${it.movie.Director}
@@ -513,8 +503,9 @@ class MovieFinderAgent(
                 Format in Markdown and include links to the movies on IMDB and the streaming service link(s) for each.
                 List those with FREE streaming first and call that out.
                 """.trimIndent()
-        return SuggestionWriteup(
-            content = text,
+        return MovieRecommendations(
+            writeup = writeup,
+            movies = recommendedMovies,
         )
     }
 

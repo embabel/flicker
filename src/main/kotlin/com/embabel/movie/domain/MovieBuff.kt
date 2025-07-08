@@ -1,6 +1,8 @@
-package com.embabel.movie
+package com.embabel.movie.domain
 
 import com.embabel.agent.domain.library.Person
+import com.embabel.agent.prompt.persona.Persona
+import com.embabel.movie.agent.OneThroughTen
 import jakarta.persistence.*
 
 @Entity
@@ -39,3 +41,15 @@ data class MovieRating(
     val rating: OneThroughTen,
     val title: String,
 )
+
+@Entity
+data class MovieGuide(
+    override val name: String,
+    override val persona: String,
+    override val voice: String,
+    override val objective: String,
+    override val role: String?,
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private val id: String? = null,
+) : Persona

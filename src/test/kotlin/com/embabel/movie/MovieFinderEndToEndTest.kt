@@ -27,6 +27,14 @@ import com.embabel.agent.spi.LlmInteraction
 import com.embabel.agent.testing.integration.DummyObjectCreatingLlmOperations
 import com.embabel.agent.testing.integration.IntegrationTestUtils.dummyAgentPlatform
 import com.embabel.common.util.DummyInstanceCreator
+import com.embabel.movie.agent.MovieFinderAgent
+import com.embabel.movie.agent.MovieFinderConfig
+import com.embabel.movie.domain.MovieBuffRepository
+import com.embabel.movie.domain.rod
+import com.embabel.movie.service.MovieResponse
+import com.embabel.movie.service.OmdbClient
+import com.embabel.movie.service.StreamingAvailabilityClient
+import com.embabel.movie.service.StreamingOption
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals

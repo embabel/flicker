@@ -16,6 +16,10 @@
 package com.embabel.movie
 
 import com.embabel.agent.api.common.OperationContext
+import com.embabel.movie.agent.MovieFinderAgent
+import com.embabel.movie.agent.MovieFinderConfig
+import com.embabel.movie.domain.MovieBuffRepository
+import com.embabel.movie.domain.rod
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot

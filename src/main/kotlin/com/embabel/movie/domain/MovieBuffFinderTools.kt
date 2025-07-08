@@ -1,4 +1,4 @@
-package com.embabel.movie
+package com.embabel.movie.domain
 
 import com.embabel.agent.domain.persistence.EntityFinderTools
 import org.springframework.ai.tool.annotation.Tool
