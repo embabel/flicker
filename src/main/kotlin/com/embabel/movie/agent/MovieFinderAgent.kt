@@ -21,7 +21,6 @@ import com.embabel.agent.api.common.createObject
 import com.embabel.agent.config.models.OpenAiModels
 import com.embabel.agent.core.CoreToolGroups
 import com.embabel.agent.core.all
-import com.embabel.agent.domain.io.UserInput
 import com.embabel.agent.domain.library.HasContent
 import com.embabel.agent.domain.library.RelevantNewsStories
 import com.embabel.agent.event.ProgressUpdateEvent
@@ -29,8 +28,6 @@ import com.embabel.agent.prompt.persona.Persona
 import com.embabel.common.ai.model.LlmOptions
 import com.embabel.common.ai.model.ModelSelectionCriteria.Companion.byName
 import com.embabel.movie.domain.MovieBuff
-import com.embabel.movie.domain.MovieBuffRepository
-import com.embabel.movie.domain.rod
 import com.embabel.movie.service.MovieResponse
 import com.embabel.movie.service.OmdbClient
 import com.embabel.movie.service.StreamingAvailabilityClient
@@ -41,6 +38,10 @@ import org.springframework.context.annotation.Profile
 import kotlin.math.min
 
 typealias OneThroughTen = Int
+
+data class MovieRequest(
+    val preference: String,
+)
 
 data class DecoratedMovieBuff(
     val movieBuff: MovieBuff,
@@ -136,16 +137,10 @@ data class MovieFinderConfig(
 class MovieFinderAgent(
     private val omdbClient: OmdbClient,
     private val streamingAvailabilityClient: StreamingAvailabilityClient,
-    private val movieBuffRepository: MovieBuffRepository,
     private val config: MovieFinderConfig,
 ) {
 
     private val logger = LoggerFactory.getLogger(MovieFinderAgent::class.java)
-
-    @Action(description = "Retrieve a MovieBuff")
-    fun findMovieBuff(userInput: UserInput, context: OperationContext): MovieBuff? =
-        rod()
-
 
     /**
      * Analyzes the taste profile of a MovieBuff using LLM to understand their preferences.
@@ -184,22 +179,10 @@ class MovieFinderAgent(
         )
     }
 
-    /**
-     * Finds relevant news stories that might inspire movie recommendations.
-     *
-     * This action demonstrates:
-     * - Integration with web tools for real-time data
-     * - Context-aware searching based on user profile
-     * - Object creation from LLM output
-     *
-     * @param dmb The DecoratedMovieBuff containing user preferences
-     * @param userInput The original user input for additional context
-     * @return RelevantNewsStories containing news that might inspire recommendations
-     */
     @Action(toolGroups = [CoreToolGroups.WEB])
     fun findNewsStories(
         dmb: DecoratedMovieBuff,
-        userInput: UserInput
+        movieRequest: MovieRequest
     ): RelevantNewsStories =
         using(config.llm).createObject(
             """
@@ -208,7 +191,7 @@ class MovieFinderAgent(
             Their movie taste profile is ${dmb.tasteProfile}
             About them: "${dmb.movieBuff.about}"
 
-            Consider the following specific request that may govern today's choice: '${userInput.content}'
+            Consider the following specific request that may govern today's choice: '${movieRequest.preference}'
 
             Given this, use web tools and generate search queries
             to find 5 relevant news stories that might inspire
@@ -216,7 +199,6 @@ class MovieFinderAgent(
             Don't look for movie news but general news that might interest them.
             If possible, look for news specific to the specific request.
             Country: ${dmb.movieBuff.countryCode}
-            Current date: ${userInput.timestamp}
             """.trimIndent()
         )
 
@@ -240,7 +222,7 @@ class MovieFinderAgent(
         canRerun = true,
     )
     fun suggestMovies(
-        userInput: UserInput,
+        movieRequest: MovieRequest,
         dmb: DecoratedMovieBuff,
         relevantNewsStories: RelevantNewsStories,
         context: OperationContext,
@@ -252,7 +234,7 @@ class MovieFinderAgent(
             """
             Suggest ${config.suggestionCount} movie titles that ${dmb.movieBuff.name} hasn't seen, but may find interesting.
 
-            Consider the specific request: "${userInput.content}"
+            Consider the specific request: "${movieRequest.preference}"
 
             Use the information about their preferences from below:
             Their movie taste: "${dmb.tasteProfile}"

@@ -1,0 +1,13 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /*background-image: url('https://thescriptlab.com/wp-content/uploads/2015/12/outofthepast-1024x731.jpg');*/
+    background-image: url('https://media.newyorker.com/photos/59095b276552fa0be682d8c1/master/w_2240,c_limit/The-Maltese-Falcon.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: #f1f5f9;
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.6; /* Added better line height */
+}

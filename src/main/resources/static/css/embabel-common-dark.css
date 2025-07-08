@@ -1,0 +1,650 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-image: url('https://substackcdn.com/image/fetch/$s_!We-x!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fd3fc28b3-239d-4ae4-bddb-6f8953035910_6561x3242.jpeg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: #f1f5f9;
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.6; /* Added better line height */
+}
+
+.container {
+    max-width: 950px;
+    margin: 0 auto;
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    padding: 25px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 30px; /* Increased from 20px */
+    font-size: 2.0rem;
+    background: #5d90dc;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+    line-height: 1.2; /* Added line height */
+}
+
+h3 {
+    margin-bottom: 0.8rem; /* Reduced for navigation menus */
+    margin-top: 1.5rem; /* Reduced top margin */
+    font-size: 1.25rem;
+    color: #fbbf24;
+    letter-spacing: 1px;
+    line-height: 1.3;
+}
+
+/* Better paragraph spacing */
+p {
+    margin-bottom: 1.2rem;
+    line-height: 1.7;
+}
+
+ul {
+    margin-bottom: 1.5rem; /* Back to reasonable spacing */
+    margin-top: 0.5rem; /* Reduced top margin */
+    padding-left: 25px;
+    list-style-type: disc;
+    list-style-position: outside;
+}
+
+li {
+    margin-bottom: 0.4rem; /* Reduced for navigation lists */
+    display: list-item;
+    line-height: 1.5; /* Slightly reduced */
+}
+
+/* Special spacing for content lists (not navigation) */
+.content ul {
+    margin-bottom: 2rem;
+    margin-top: 1rem;
+}
+
+.content li {
+    margin-bottom: 0.8rem;
+    line-height: 1.6;
+}
+
+/* Special spacing for forms and content areas */
+.form-content ul,
+.article-content ul,
+.plan-content ul {
+    margin-bottom: 2rem;
+    margin-top: 1rem;
+}
+
+.form-content li,
+.article-content li,
+.plan-content li {
+    margin-bottom: 0.8rem;
+    line-height: 1.6;
+}
+
+
+form {
+    display: grid;
+    gap: 20px; /* Increased from 15px */
+    margin-top: 2rem; /* Added top margin */
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 8px; /* Increased from 3px */
+    padding: 0 0 5px 0; /* Increased bottom padding */
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px; /* Increased from 12px */
+}
+
+label {
+    font-weight: 600;
+    margin-bottom: 8px; /* Increased from 3px */
+    color: #cbd5e1;
+    font-size: 0.88rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+input, textarea, select {
+    padding: 12px 15px; /* Increased padding */
+    border: 2px solid rgba(148, 163, 184, 0.2);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.6);
+    color: #f1f5f9;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    line-height: 1.5; /* Added line height */
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.1);
+    transform: translateY(-2px);
+}
+
+input::placeholder, textarea::placeholder {
+    color: #64748b;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 120px; /* Increased from 100px */
+    font-family: inherit;
+    line-height: 1.6; /* Added line height */
+}
+
+.submit-btn {
+    background: #486346;
+    color: white;
+    border: none;
+    padding: 12px 20px; /* Increased padding */
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 20px; /* Increased from 10px */
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    position: relative;
+    overflow: hidden;
+    line-height: 1.2; /* Added line height */
+}
+
+.submit-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+}
+
+.submit-btn:active {
+    transform: translateY(-1px);
+}
+
+.submit-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+}
+
+.submit-btn:hover::before {
+    left: 100%;
+}
+
+#planResult {
+    margin-top: 20px; /* Increased from 12px */
+    padding: 15px; /* Increased from 10px */
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    min-height: 50px; /* Increased from 40px */
+    backdrop-filter: blur(5px);
+    line-height: 1.6; /* Added line height */
+}
+
+.date-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px; /* Increased from 12px */
+}
+
+/* --- Improved Link Styling for Visibility --- */
+a {
+    color: #38bdf8;
+    text-decoration: underline;
+    font-weight: 600;
+    transition: color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 0 #38bdf8;
+    line-height: 1.6; /* Added line height */
+}
+
+a:hover, a:focus {
+    color: #fbbf24;
+    text-decoration: underline;
+    box-shadow: 0 2px 0 #fbbf24;
+    outline: none;
+}
+
+/* Friendly map button styling */
+.friendly-map-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    border-radius: 50px;
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    margin: 10px 0; /* Added vertical margin */
+}
+
+.friendly-map-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(74, 222, 128, 0.4);
+    color: #fff;
+    text-decoration: none;
+}
+
+.friendly-map-btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(74, 222, 128, 0.4);
+}
+
+.friendly-map-btn svg {
+    color: #fff;
+    transition: transform 0.3s ease;
+}
+
+.friendly-map-btn:hover svg {
+    transform: scale(1.2);
+}
+
+/* Scary delete button styling */
+.scary-delete-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    color: #fff;
+    font-weight: 600;
+    border: 1px solid #7f1d1d;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    margin: 10px 0; /* Added vertical margin */
+}
+
+.scary-delete-btn:before {
+    content: "⚠️";
+    margin-right: 4px;
+}
+
+.scary-delete-btn:hover {
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(239, 68, 68, 0.4);
+    color: #fff;
+    text-decoration: none;
+}
+
+.scary-delete-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);
+}
+
+.scary-delete-btn:hover:after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    animation: pulse 1.5s infinite;
+}
+
+
+@keyframes pulse {
+    0% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+/* Image spacing improvements */
+.styled-image-thick {
+    border: 15px solid rgba(30, 41, 59, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 3px rgba(148, 163, 184, 0.3),
+    inset 0 0 0 6px rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 2rem 0; /* Added significant top and bottom margins */
+}
+
+/* General image spacing */
+img {
+    margin: 1.5rem 0; /* Add spacing around all images */
+    display: block;
+}
+
+/* Content after images */
+.styled-image-thick + * {
+    margin-top: 2rem; /* Extra space after styled images */
+}
+
+img + * {
+    margin-top: 1.5rem; /* Extra space after regular images */
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 15px; /* Increased from 10px */
+        margin: 8px; /* Increased from 4px */
+    }
+
+    .form-row, .date-group {
+        grid-template-columns: 1fr;
+        gap: 12px; /* Increased from 7px */
+    }
+
+    h2 {
+        font-size: 1.5rem;
+        margin-bottom: 25px; /* Added bottom margin */
+    }
+
+    h3 {
+        margin-top: 1.5rem; /* Reduced for mobile */
+        margin-bottom: 1.2rem;
+    }
+
+    ul {
+        margin-bottom: 1.5rem;
+        margin-top: 0.8rem;
+    }
+
+    .styled-image-thick {
+        margin: 1.5rem 0; /* Reduced for mobile */
+    }
+}
+
+/* Process update styles consistent with theme */
+.process-update {
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    margin: 15px 0;
+    padding: 20px;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    line-height: 1.6;
+}
+
+.process-update:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    border-color: rgba(96, 165, 250, 0.3);
+}
+
+.update-header {
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #60a5fa;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+    line-height: 1.3;
+}
+
+.update-details {
+    font-size: 0.95rem;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.json-content {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    max-height: 250px;
+    overflow-y: auto;
+    margin-top: 12px;
+    color: #e2e8f0;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.json-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.json-content::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.3);
+    border-radius: 3px;
+}
+
+.json-content::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 3px;
+}
+
+.json-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.5);
+}
+
+.hidden {
+    display: none;
+}
+
+/* Working status styles */
+.working {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.working h3 {
+    margin-bottom: 15px;
+    color: #fbbf24;
+    font-size: 1.25rem;
+    letter-spacing: 1px;
+}
+
+.working p {
+    margin-bottom: 20px;
+    color: #cbd5e1;
+    line-height: 1.7;
+}
+
+/* Process controls styling */
+.process-controls {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    line-height: 1.2;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #1e40af);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+/* Spinner styling consistent with theme */
+.spinner {
+    margin: 20px auto;
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(148, 163, 184, 0.2);
+    border-top: 4px solid #60a5fa;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Updates container */
+#sse-updates {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+#init-message {
+    text-align: center;
+    color: #64748b;
+    font-style: italic;
+    padding: 20px;
+    margin: 0;
+}
+
+/* Mobile responsiveness for process updates */
+@media (max-width: 768px) {
+    .process-update {
+        margin: 12px 0;
+        padding: 15px;
+    }
+
+    .process-controls {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+        max-width: 280px;
+    }
+
+    .json-content {
+        font-size: 0.8rem;
+        max-height: 200px;
+    }
+}
+
+#current-plan {
+    position: sticky;
+    top: 0;
+    background-color: #1a1a1a;
+    padding: 15px;
+    border-bottom: 1px solid #333;
+    margin-bottom: 20px;
+    z-index: 100;
+    display: none;
+}
+
+#current-plan.visible {
+    display: block;
+}
+
+/* Styles for the enhanced plan action list */
+.plan-actions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.plan-action-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    background-color: #2a2a2a;
+    border-radius: 6px;
+    border-left: 3px solid #4a90e2;
+    transition: background-color 0.2s ease;
+}
+
+.plan-action-item:hover {
+    background-color: #333333;
+}
+
+.action-icon {
+    margin-right: 12px;
+    font-size: 1.2em;
+}
+
+.action-name {
+    font-weight: 500;
+    color: #e6e6e6;
+}
+
+
+hr.dotted {
+    border: none;
+    border-top: 3px dotted #6aa121;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin: 2rem 0;
+}
+
+.footer-dark p {
+    margin: 0;
+    font-weight: 300;
+    color: #0a1113;
+}
+
+.profile-image {
+    max-width: 150px;
+    max-height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #dee2e6;
+}

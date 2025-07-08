@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{common/layout :: layout(~{::title}, ~{::section})}">
+<head>
+    <title>Embabel Platform</title>
+    <th:block th:fragment="extraHeadContent">
+        <script src="https://unpkg.com/htmx.org@2.0.5"></script>
+        <script src="https://unpkg.com/htmx.org@2.2.2/dist/ext/sse.js"></script>
+    </th:block>
+</head>
+<body>
+<section>
+    <h2 style="margin-bottom: 2rem;">Embabel Platform</h2>
+
+    <h3 style="margin-bottom: 1rem;">Embabel Platform</h3>
+    <ul>
+        <li style="margin-bottom: 0.5rem;"><a href="/api/v1/platform-info" target="_blank" rel="noopener noreferrer">Agents</a>
+        </li>
+        <li style="margin-bottom: 0.5rem;"><a href="/api/v1/platform-info/tool-groups" target="_blank"
+                                              rel="noopener noreferrer">Tool groups</a></li>
+        <li style="margin-bottom: 0.5rem;"><a href="/api/v1/platform-info/models" target="_blank"
+                                              rel="noopener noreferrer">Models</a></li>
+        <li style="margin-bottom: 0.5rem;"><a href="http://127.0.0.1:9411/zipkin/" target="_blank"
+                                              rel="noopener noreferrer">Traces with Zipkin</a></li>
+    </ul>
+</section>
+</body>
+</html>
