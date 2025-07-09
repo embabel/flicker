@@ -30,7 +30,7 @@ import com.embabel.common.util.DummyInstanceCreator
 import com.embabel.movie.agent.MovieFinderAgent
 import com.embabel.movie.agent.MovieFinderConfig
 import com.embabel.movie.domain.MovieBuffRepository
-import com.embabel.movie.domain.rod
+import com.embabel.movie.populate.rod
 import com.embabel.movie.service.MovieResponse
 import com.embabel.movie.service.OmdbClient
 import com.embabel.movie.service.StreamingAvailabilityClient

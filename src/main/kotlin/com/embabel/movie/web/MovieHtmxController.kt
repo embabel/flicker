@@ -21,7 +21,6 @@ import com.embabel.agent.core.Verbosity
 import com.embabel.agent.web.htmx.GenericProcessingValues
 import com.embabel.movie.agent.MovieRequest
 import com.embabel.movie.domain.MovieBuffRepository
-import com.embabel.movie.domain.rod
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -70,7 +69,8 @@ class MovieHtmxController(
                 ),
             ),
             movieRequest,
-            rod(),
+            // TODO fix this
+            movieBuffRepository.findAll().single(),
         )
 
         model.addAttribute("movieRequest", movieRequest)

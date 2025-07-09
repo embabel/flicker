@@ -1,7 +1,7 @@
 package com.embabel.movie
 
 import com.embabel.movie.domain.MovieBuffService
-import com.embabel.movie.domain.rod
+import com.embabel.movie.populate.rod
 import org.springframework.shell.standard.ShellComponent
 import org.springframework.shell.standard.ShellMethod
 

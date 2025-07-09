@@ -13,9 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.embabel.movie.domain
+package com.embabel.movie.populate
 
 import com.embabel.common.util.RandomFromFileMessageGenerator
+import com.embabel.movie.domain.MovieBuff
+import com.embabel.movie.domain.MovieBuffRepository
+import com.embabel.movie.domain.MovieRating
+import jakarta.annotation.PostConstruct
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+
+@Service
+@Transactional
+class StartupDataInitializer(
+    private val movieBuffRepository: MovieBuffRepository
+) {
+
+    @PostConstruct
+    fun init() {
+        val name = "Rod"
+        if (movieBuffRepository.findByName(name) == null) {
+            movieBuffRepository.save(rod())
+        }
+    }
+}
 
 fun rod() = MovieBuff(
     name = "Rod",
