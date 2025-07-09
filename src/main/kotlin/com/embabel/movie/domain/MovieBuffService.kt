@@ -1,5 +1,6 @@
 package com.embabel.movie.domain
 
+import com.embabel.agent.web.security.UserRepository
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -7,10 +8,10 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * Spring Data repository for MovieBuff entities, which are mapped with JPA
  */
-interface MovieBuffRepository : JpaRepository<MovieBuff, String> {
+interface MovieBuffRepository : JpaRepository<MovieBuff, String>, UserRepository {
 
     fun findByName(name: String): MovieBuff?
-    
+
 
 }
 

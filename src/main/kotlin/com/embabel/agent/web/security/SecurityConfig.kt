@@ -16,7 +16,7 @@ data class SecurityProperties(
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
-    private val customOAuth2UserService: CustomOAuth2UserService,
+    private val embabelOAuth2UserService: EmbabelOAuth2UserService,
     private val securityProperties: SecurityProperties,
 ) {
 
@@ -45,7 +45,7 @@ class SecurityConfig(
                     .loginPage("/login")
                     .defaultSuccessUrl("/", true)
                     .userInfoEndpoint { userInfo ->
-                        userInfo.userService(customOAuth2UserService)
+                        userInfo.userService(embabelOAuth2UserService)
                     }
             }
             .logout { logout ->

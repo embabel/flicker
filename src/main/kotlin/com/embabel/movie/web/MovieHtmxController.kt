@@ -19,9 +19,13 @@ import com.embabel.agent.core.AgentPlatform
 import com.embabel.agent.core.ProcessOptions
 import com.embabel.agent.core.Verbosity
 import com.embabel.agent.web.htmx.GenericProcessingValues
+import com.embabel.agent.web.security.EmbabelAuth2User
 import com.embabel.movie.agent.MovieRequest
+import com.embabel.movie.domain.MovieBuff
 import com.embabel.movie.domain.MovieBuffRepository
 import org.slf4j.LoggerFactory
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
@@ -53,8 +57,14 @@ class MovieHtmxController(
     @PostMapping("/find-movies")
     fun findMovies(
         @ModelAttribute movieRequest: MovieRequest,
-        model: Model
+        model: Model,
+        @AuthenticationPrincipal
+        principal: OAuth2User,
     ): String {
+
+        val movieBuff = (principal as? EmbabelAuth2User)?.getUser() as? MovieBuff
+            ?: error("User is not a movie buff. Please register as a movie buff to find movies.")
+        logger.info("Finding movies for user {} named {}", movieBuff.email, movieBuff.name)
 
         // Convert form to domain objects
         val agent = agentPlatform.agents().singleOrNull { it.name.lowercase().contains("movie") }
@@ -69,8 +79,7 @@ class MovieHtmxController(
                 ),
             ),
             movieRequest,
-            // TODO fix this
-            movieBuffRepository.findAll().single(),
+            movieBuff,
         )
 
         model.addAttribute("movieRequest", movieRequest)

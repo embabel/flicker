@@ -1,7 +1,7 @@
 package com.embabel.movie.domain
 
-import com.embabel.agent.domain.library.Person
 import com.embabel.agent.prompt.persona.Persona
+import com.embabel.agent.web.security.User
 import com.embabel.movie.agent.OneThroughTen
 import jakarta.persistence.*
 import org.hibernate.annotations.Immutable
@@ -9,7 +9,7 @@ import org.hibernate.annotations.Immutable
 @Entity
 data class MovieBuff(
     @Id
-    val email: String,
+    override val email: String,
     override val name: String,
     @OneToMany(fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
     val movieRatings: List<MovieRating>,
@@ -23,7 +23,7 @@ data class MovieBuff(
     val hobbies: List<String>,
     val about: String,
     val streamingServices: List<String>,
-) : Person {
+) : User {
 
     /**
      * We use this so we don't overwhelm the prompt
