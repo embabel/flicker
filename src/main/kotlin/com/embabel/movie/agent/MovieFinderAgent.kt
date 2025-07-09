@@ -168,7 +168,7 @@ class MovieFinderAgent(
                 They have rated the following movies out of 10:
                 ${
                     movieBuff.randomRatings(50).joinToString("\n") {
-                        "${it.title}: ${it.rating}"
+                        "${it.movie.title}: ${it.rating}"
                     }
                 }
 
@@ -248,9 +248,9 @@ class MovieFinderAgent(
             Don't include the following movies, which they've seen (rating attached):
             ${
                 dmb.movieBuff.movieRatings
-                    .sortedBy { it.title }
+                    .sortedBy { it.movie.title }
                     .joinToString("\n") {
-                        "${it.title}: ${it.rating}"
+                        "${it.movie.title}: ${it.rating}"
                     }
             }
             Don't include these movies we've already suggested:
@@ -317,7 +317,7 @@ class MovieFinderAgent(
             // Sometimes the LLM ignores being told not to
             // include movies the user has seen
             .filterNot { movie ->
-                movie.title in movieBuff.movieRatings.map { it.title }
+                movie.imdbId in movieBuff.movieRatings.map { it.movie.imdbId }
             }
             .mapNotNull { movie ->
                 try {

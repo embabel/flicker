@@ -4,12 +4,12 @@ import com.embabel.agent.domain.library.Person
 import com.embabel.agent.prompt.persona.Persona
 import com.embabel.movie.agent.OneThroughTen
 import jakarta.persistence.*
+import org.hibernate.annotations.Immutable
 
 @Entity
 data class MovieBuff(
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    val id: String? = null,
+    val email: String,
     override val name: String,
     @OneToMany(fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
     val movieRatings: List<MovieRating>,
@@ -39,8 +39,30 @@ data class MovieRating(
     @GeneratedValue(strategy = GenerationType.UUID)
     private val id: String? = null,
     val rating: OneThroughTen,
-    val title: String,
+    @ManyToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
+    val movie: Movie,
 )
+
+interface MovieInfo {
+    val imdbId: String?
+    val title: String
+}
+
+@Entity
+@Immutable
+data class Movie(
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private val id: String? = null,
+    override val imdbId: String?,
+    override val title: String,
+) : MovieInfo {
+
+    constructor(movieInfo: MovieInfo) : this(
+        imdbId = movieInfo.imdbId,
+        title = movieInfo.title,
+    )
+}
 
 @Entity
 data class MovieGuide(

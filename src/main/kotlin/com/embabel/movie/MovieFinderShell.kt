@@ -18,7 +18,7 @@ internal class MovieFinderShell(
 
     @ShellMethod
     fun createUser(): String {
-        val user = movieBuffService.save(rod())
-        return "Created user: ${user.name} with ID: ${user.id}"
+        val user = movieBuffService.save(rod(TODO()))
+        return "Created user: ${user.name} with email: ${user.email}"
     }
 }

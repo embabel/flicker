@@ -16,6 +16,7 @@
 package com.embabel.movie.service
 
 import com.embabel.common.util.loggerFor
+import com.embabel.movie.domain.MovieInfo
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -87,7 +88,7 @@ class OmdbClient(
 }
 
 data class MovieResponse(
-    @field:JsonProperty("Title") val title: String,
+    @field:JsonProperty("Title") override val title: String,
     @field:JsonProperty("Year") val year: String,
     @field:JsonProperty("Rated") val rated: String,
     @field:JsonProperty("Released") val released: String,
@@ -105,14 +106,14 @@ data class MovieResponse(
     @field:JsonProperty("Metascore") val metascore: String,
     @field:JsonProperty("imdbRating") val imdbRating: String,
     @field:JsonProperty("imdbVotes") val imdbVotes: String,
-    @field:JsonProperty("imdbID") val imdbId: String,
+    @field:JsonProperty("imdbID") override val imdbId: String,
     @field:JsonProperty("Type") val type: String,
     @field:JsonProperty("DVD") val dvd: String?,
     @field:JsonProperty("BoxOffice") val boxOffice: String?,
     @field:JsonProperty("Production") val production: String?,
     @field:JsonProperty("Website") val website: String?,
     @field:JsonProperty("Response") val response: String
-)
+) : MovieInfo
 
 data class Rating(
     @field:JsonProperty("Source") val source: String,

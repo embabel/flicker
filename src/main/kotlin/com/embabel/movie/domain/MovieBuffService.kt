@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional
 interface MovieBuffRepository : JpaRepository<MovieBuff, String> {
 
     fun findByName(name: String): MovieBuff?
+    
 
 }
 
