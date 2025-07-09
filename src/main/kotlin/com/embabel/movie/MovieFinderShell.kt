@@ -1,24 +1,22 @@
 package com.embabel.movie
 
-import com.embabel.movie.domain.MovieBuffService
-import com.embabel.movie.populate.rod
+import com.embabel.movie.domain.MovieService
 import org.springframework.shell.standard.ShellComponent
-import org.springframework.shell.standard.ShellMethod
 
 @ShellComponent("Movie finder commands")
 internal class MovieFinderShell(
-    private val movieBuffService: MovieBuffService,
+    private val movieService: MovieService,
 ) {
-    @ShellMethod
-    fun users(
-    ): String {
-        println("Found ${movieBuffService.findAll().size} users")
-        return movieBuffService.findAll().joinToString("\n") { it.toString() }
-    }
-
-    @ShellMethod
-    fun createUser(): String {
-        val user = movieBuffService.save(rod(TODO()))
-        return "Created user: ${user.name} with email: ${user.email}"
-    }
+//    @ShellMethod
+//    fun users(
+//    ): String {
+//        println("Found ${movieService.findAll().size} users")
+//        return movieService.findAll().joinToString("\n") { it.toString() }
+//    }
+//
+//    @ShellMethod
+//    fun createUser(): String {
+//        val user = movieService.save(rod(TODO()))
+//        return "Created user: ${user.name} with email: ${user.email}"
+//    }
 }

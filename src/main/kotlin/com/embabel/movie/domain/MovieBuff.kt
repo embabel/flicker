@@ -2,9 +2,11 @@ package com.embabel.movie.domain
 
 import com.embabel.agent.prompt.persona.Persona
 import com.embabel.agent.web.security.User
+import com.embabel.common.core.types.Timestamped
 import com.embabel.movie.agent.OneThroughTen
 import jakarta.persistence.*
 import org.hibernate.annotations.Immutable
+import java.time.Instant
 
 @Entity
 data class MovieBuff(
@@ -12,7 +14,7 @@ data class MovieBuff(
     override val email: String,
     override val name: String,
     @OneToMany(fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
-    val movieRatings: List<MovieRating>,
+    val movieRatings: MutableList<MovieRating> = mutableListOf(),
     val countryCode: String,
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
@@ -25,6 +27,12 @@ data class MovieBuff(
     val streamingServices: List<String>,
 ) : User {
 
+    fun addRating(movieRating: MovieRating) {
+        // Update any existing rating
+        movieRatings.removeIf { it.movie.imdbId == movieRating.movie.imdbId }
+        movieRatings.add(movieRating)
+    }
+
     /**
      * We use this so we don't overwhelm the prompt
      */
@@ -35,13 +43,14 @@ data class MovieBuff(
 
 @Entity
 data class MovieRating(
+    @ManyToOne(fetch = FetchType.EAGER)
+    val movie: Movie,
+    val rating: OneThroughTen,
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private val id: String? = null,
-    val rating: OneThroughTen,
-    @ManyToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
-    val movie: Movie,
-)
+    override val timestamp: Instant = Instant.now(),
+) : Timestamped
 
 interface MovieInfo {
     val imdbId: String?
@@ -64,14 +73,15 @@ data class Movie(
     )
 }
 
+/**
+ * Roger Ebert style movie guide persona.
+ */
 @Entity
 data class MovieGuide(
+    @Id
     override val name: String,
     override val persona: String,
     override val voice: String,
     override val objective: String,
     override val role: String?,
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private val id: String? = null,
 ) : Persona

@@ -16,12 +16,8 @@
 package com.embabel.movie.populate
 
 import com.embabel.common.util.RandomFromFileMessageGenerator
-import com.embabel.common.util.loggerFor
-import com.embabel.movie.domain.Movie
 import com.embabel.movie.domain.MovieBuff
-import com.embabel.movie.domain.MovieBuffRepository
-import com.embabel.movie.domain.MovieRating
-import com.embabel.movie.service.OmdbClient
+import com.embabel.movie.domain.MovieService
 import jakarta.annotation.PostConstruct
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -29,54 +25,54 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional
 class StartupDataInitializer(
-    private val movieBuffRepository: MovieBuffRepository,
-    private val omdbClient: OmdbClient,
+    private val movieService: MovieService,
 ) {
 
     @PostConstruct
     fun init() {
         val name = "Rod"
-        if (movieBuffRepository.findByName(name) == null) {
-            movieBuffRepository.save(rod(omdbClient))
-        }
-    }
-}
-
-fun rod(omdbClient: OmdbClient) = MovieBuff(
-    name = "Rod",
-    email = "johnsonroda@gmail.com",
-    movieRatings = parseRatings(
-        RandomFromFileMessageGenerator("movie/rod_ratings.tsv")
-            .messages,
-        omdbClient,
-    ),
-    hobbies = listOf("Travel", "Skiing", "Chess", "Hiking", "Reading"),
-    countryCode = "au",
-    about = """
+        if (movieService.findMovieBuffByName(name) == null) {
+            val rod = MovieBuff(
+                name = "Rod",
+                email = "johnsonroda@gmail.com",
+                hobbies = listOf("Travel", "Skiing", "Chess", "Hiking", "Reading"),
+                countryCode = "au",
+                about = """
                 Rod is an Australian man who has a PhD in Musicology and
                 has a career as a software engineer, author and tech entrepreneur.
                 He is widely traveled and has lived in California and the UK
                 before returning to Sydney.
             """.trimIndent(),
-    streamingServices = listOf("Netflix", "Stan", "Disney+")
-)
-
-
-fun parseRatings(inputs: List<String>, omdbClient: OmdbClient): List<MovieRating> {
-    return inputs
-        .mapNotNull { line ->
-            // Split on multiple spaces and filter out empty strings
-            val parts = line.split("\\s+".toRegex()).filter { it.isNotEmpty() }
-
-            // Last element is the rating, everything else is the title
-            val rating = parts.last().toInt()
-            val title = parts.dropLast(1).joinToString(" ")
-            val movie = omdbClient.getMovieByTitle(title)
-            if (movie == null) {
-                loggerFor<OmdbClient>().info("Movie not found for title{}", title)
-                return@mapNotNull null
-            }
-            loggerFor<OmdbClient>().info("Movie found: {}, {}", movie.imdbId, movie.title)
-            MovieRating(movie = Movie(movie), rating = rating)
+                streamingServices = listOf("Netflix", "Stan", "Disney+")
+            )
+            loadRatings(rod, "movie/rod_ratings.tsv")
+            movieService.save(rod)
         }
+    }
+
+
+    fun loadRatings(movieBuff: MovieBuff, tsv: String) {
+        addRatings(
+            movieBuff,
+            RandomFromFileMessageGenerator(tsv)
+                .messages,
+        )
+    }
+
+
+    fun addRatings(
+        movieBuff: MovieBuff,
+        inputs: List<String>,
+    ) {
+        inputs
+            .forEach { line ->
+                // Split on multiple spaces and filter out empty strings
+                val parts = line.split("\\s+".toRegex()).filter { it.isNotEmpty() }
+
+                // Last element is the rating, everything else is the title
+                val rating = parts.last().toInt()
+                val title = parts.dropLast(1).joinToString(" ")
+                movieService.rate(movieBuff, title, rating)
+            }
+    }
 }

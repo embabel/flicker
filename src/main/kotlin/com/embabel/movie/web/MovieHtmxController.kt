@@ -48,7 +48,7 @@ class MovieHtmxController(
     fun findMovies(model: Model): String {
         model.addAttribute(
             "movieRequest", MovieRequest(
-                preference = "Find me something with Penelope Cruz",
+                preference = "A film with a remarkable musical score",
             )
         )
         return "find-movies-form"
