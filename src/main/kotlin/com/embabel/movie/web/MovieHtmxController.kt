@@ -22,7 +22,6 @@ import com.embabel.agent.web.htmx.GenericProcessingValues
 import com.embabel.agent.web.security.EmbabelAuth2User
 import com.embabel.movie.agent.MovieRequest
 import com.embabel.movie.domain.MovieBuff
-import com.embabel.movie.domain.MovieBuffRepository
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.core.user.OAuth2User
@@ -37,12 +36,9 @@ import org.springframework.web.bind.annotation.RequestMapping
 @RequestMapping(value = ["/", "/movie"])
 class MovieHtmxController(
     private val agentPlatform: AgentPlatform,
-    // TODO shouldn't pass in repository here
-    private val movieBuffRepository: MovieBuffRepository,
 ) {
 
     private val logger = LoggerFactory.getLogger(MovieHtmxController::class.java)
-
 
     @GetMapping
     fun findMovies(model: Model): String {
