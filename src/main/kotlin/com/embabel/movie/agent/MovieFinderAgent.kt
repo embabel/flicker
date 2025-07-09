@@ -317,13 +317,13 @@ class MovieFinderAgent(
             // Sometimes the LLM ignores being told not to
             // include movies the user has seen
             .filterNot { movie ->
-                movie.Title in movieBuff.movieRatings.map { it.title }
+                movie.title in movieBuff.movieRatings.map { it.title }
             }
             .mapNotNull { movie ->
                 try {
                     val allStreamingOptions =
                         streamingAvailabilityClient.getShowStreamingIn(
-                            imdb = movie.imdbID,
+                            imdb = movie.imdbId,
                             country = movieBuff.countryCode,
                         ).distinct()
                     val availableToUser = allStreamingOptions.filter {
@@ -331,7 +331,7 @@ class MovieFinderAgent(
                     }
                     logger.debug(
                         "Movie {} available in [{}] on {}: {} can watch it free on {}",
-                        movie.Title,
+                        movie.title,
                         movieBuff.countryCode,
                         allStreamingOptions.map { it.service.name }.sorted().joinToString(", "),
                         movieBuff.name,
@@ -340,7 +340,7 @@ class MovieFinderAgent(
                     if (allStreamingOptions.isEmpty()) {
                         logger.info(
                             "Movie {} not available to {} in their country {} - filtering it out",
-                            movie.Title,
+                            movie.title,
                             movieBuff.name,
                             movieBuff.countryCode,
                         )
@@ -354,7 +354,7 @@ class MovieFinderAgent(
                     } else if (desperationMode) {
                         logger.info(
                             "Movie {} not available to {} on any of their streaming services but we're in desperation mode",
-                            movie.Title,
+                            movie.title,
                             movieBuff.name,
                         )
                         StreamableMovie(
@@ -365,7 +365,7 @@ class MovieFinderAgent(
                     } else {
                         logger.info(
                             "Movie {} not available to {} on any of their streaming services and we're not yet in desperation mode {} - filtering it out",
-                            movie.Title,
+                            movie.title,
                             movieBuff.name,
                             movieBuff.streamingServices.sorted().joinToString(", ")
                         )
@@ -401,7 +401,7 @@ class MovieFinderAgent(
         val streamableMovies = context
             .all<StreamableMovies>()
             .flatMap { it.movies }
-            .distinctBy { it.movie.imdbID }
+            .distinctBy { it.movie.imdbId }
         context.processContext.onProcessEvent(
             ProgressUpdateEvent(
                 agentProcess = context.agentProcess,
@@ -428,7 +428,7 @@ class MovieFinderAgent(
         context: OperationContext,
     ): List<String> = context
         .all<SuggestedMovieTitles>()
-        .flatMap { it.titles } + allStreamableMovies(context).map { it.movie.Title }
+        .flatMap { it.titles } + allStreamableMovies(context).map { it.movie.title }
         .distinct()
         .sorted()
 
@@ -473,10 +473,10 @@ class MovieFinderAgent(
                 ${
                 recommendedMovies.joinToString("\n\n") {
                     """
-                        ${it.movie.Title} (${it.movie.Year}): ${it.movie.imdbID}
-                        Director: ${it.movie.Director}
-                        Actors: ${it.movie.Actors}
-                        ${it.movie.Plot}
+                        ${it.movie.title} (${it.movie.year}): ${it.movie.imdbId}
+                        Director: ${it.movie.director}
+                        Actors: ${it.movie.actors}
+                        ${it.movie.plot}
                         FREE Streaming available to ${dmb.movieBuff.name} on ${
                         it.availableStreamingOptions.joinToString(
                             ", "

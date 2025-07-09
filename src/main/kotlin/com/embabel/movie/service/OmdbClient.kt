@@ -16,6 +16,7 @@
 package com.embabel.movie.service
 
 import com.embabel.common.util.loggerFor
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
@@ -86,38 +87,38 @@ class OmdbClient(
 }
 
 data class MovieResponse(
-    val Title: String,
-    val Year: String,
-    val Rated: String,
-    val Released: String,
-    val Runtime: String,
-    val Genre: String,
-    val Director: String,
-    val Writer: String,
-    val Actors: String,
-    val Plot: String,
-    val Language: String,
-    val Country: String,
-    val Awards: String,
-    val Poster: String,
-    val Ratings: List<Rating>,
-    val Metascore: String,
-    val imdbRating: String,
-    val imdbVotes: String,
-    val imdbID: String,
-    val Type: String,
-    val DVD: String?,
-    val BoxOffice: String?,
-    val Production: String?,
-    val Website: String?,
-    val Response: String
+    @field:JsonProperty("Title") val title: String,
+    @field:JsonProperty("Year") val year: String,
+    @field:JsonProperty("Rated") val rated: String,
+    @field:JsonProperty("Released") val released: String,
+    @field:JsonProperty("Runtime") val runtime: String,
+    @field:JsonProperty("Genre") val genre: String,
+    @field:JsonProperty("Director") val director: String,
+    @field:JsonProperty("Writer") val writer: String,
+    @field:JsonProperty("Actors") val actors: String,
+    @field:JsonProperty("Plot") val plot: String,
+    @field:JsonProperty("Language") val language: String,
+    @field:JsonProperty("Country") val country: String,
+    @field:JsonProperty("Awards") val awards: String,
+    @field:JsonProperty("Poster") val poster: String,
+    @field:JsonProperty("Ratings") val ratings: List<Rating>,
+    @field:JsonProperty("Metascore") val metascore: String,
+    @field:JsonProperty("imdbRating") val imdbRating: String,
+    @field:JsonProperty("imdbVotes") val imdbVotes: String,
+    @field:JsonProperty("imdbID") val imdbId: String,
+    @field:JsonProperty("Type") val type: String,
+    @field:JsonProperty("DVD") val dvd: String?,
+    @field:JsonProperty("BoxOffice") val boxOffice: String?,
+    @field:JsonProperty("Production") val production: String?,
+    @field:JsonProperty("Website") val website: String?,
+    @field:JsonProperty("Response") val response: String
 )
 
 data class Rating(
-    val Source: String,
-    val Value: String
+    @field:JsonProperty("Source") val source: String,
+    @field:JsonProperty("Value") val value: String
 )
 
 data class ErrorResponse(
-    val Error: String,
+    @field:JsonProperty("Error") val error: String
 )
