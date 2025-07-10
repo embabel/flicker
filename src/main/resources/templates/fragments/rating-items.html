@@ -1,6 +1,3 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<body>
 <div th:fragment="rating-items(ratings, limit)">
     <div class="ratings-list">
         <div th:each="rating : ${ratings}" class="rating-item">
@@ -20,15 +17,13 @@
             </div>
         </div>
     </div>
-    
-    <!-- Infinite scroll trigger -->
+
     <div th:if="${hasMore}"
-         hx-get="@{/movie/ratings/more(offset=${offset}, limit=10)}"
-         hx-trigger="revealed"
-         hx-swap="outerHTML"
+         th:hx-get="@{/movie/ratings/more(offset=${offset},limit=${limit})}"
+         hx-trigger="intersect once"
+         hx-target="#ratings-container"
+         hx-swap="beforeend"
          hx-indicator=".loading-indicator">
-        <div class="loading-indicator">Loading more...</div>
+        <!--        <div class="loading-indicator">Loading more...</div>-->
     </div>
 </div>
-</body>
-</html>

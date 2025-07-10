@@ -128,10 +128,13 @@ class MovieHtmxController(
         logger.info("Loading more ratings for user {} at offset {}", movieBuff.email, offset)
         val ratings = movieService.getUserRatings(movieBuff, offset, limit)
 
+        val newOffset = offset + ratings.size
+        val totalRatings = movieBuff.movieRatings.size
+
         model.addAttribute("ratings", ratings)
-        model.addAttribute("offset", offset + ratings.size)
+        model.addAttribute("offset", newOffset)
         model.addAttribute("limit", limit)
-        model.addAttribute("hasMore", offset + ratings.size < movieBuff.movieRatings.size)
+        model.addAttribute("hasMore", newOffset < totalRatings)
 
         return "fragments/rating-items"
     }
@@ -147,7 +150,7 @@ class MovieHtmxController(
     /**
      * Process a new rating submission
      */
-    @PostMapping("/ratings/add")
+    @PostMapping("/ratings/add", produces = [MediaType.TEXT_HTML_VALUE])
     fun addRating(
         @RequestParam title: String,
         @RequestParam rating: Int,
@@ -169,9 +172,13 @@ class MovieHtmxController(
         val updatedMovieBuff = movieService.findMovieBuffByEmail(movieBuff.email)
             ?: error("Could not find movie buff after adding rating")
 
-        val latestRating = updatedMovieBuff.movieRatings.minByOrNull { it.movie.title }
+        val latestRating = updatedMovieBuff.movieRatings.maxByOrNull { it.timestamp }
 
         model.addAttribute("ratings", listOfNotNull(latestRating))
+        model.addAttribute("offset", 1)  // Since we're only showing one rating
+        model.addAttribute("limit", 10)
+        model.addAttribute("hasMore", false)  // Don't show load more for the single new rating
+
         return "fragments/rating-items"
     }
 

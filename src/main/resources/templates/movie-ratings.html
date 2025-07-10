@@ -1,20 +1,21 @@
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{common/layout :: layout(~{::title}, ~{::section})}">
+      th:replace="~{common/layout :: layout(~{::title}, ~{::section})}"
+      th:with="_htmx=true">
 <head>
-    <title>
-        <!-- th:text="${movieRecommendations.caption}"-->
-        >Embabel Movie Finder</title>
-    <th:block th:fragment="extraHeadContent">
-        <script src="https://unpkg.com/htmx.org@2.0.5"></script>
-    </th:block>
+
+    <title>Flicker</title>
+
 </head>
 <body>
 <section>
     <div class="container">
         <h1>My Movie Ratings</h1>
         <p>
-            <a href="/" class="btn btn-primary">Find Movies</a>
-            <button class="btn btn-success" hx-get="/movie/ratings/add" hx-target="#rating-form-container">
+            <!-- Replace whole page -->
+            <button class="movie-button" hx-get="/" hx-target="body" hx-swap="outerHTML">
+                Find movies
+            </button>
+            <button class="movie-button" hx-get="/movie/ratings/add" hx-target="#rating-form-container">
                 Add New Rating
             </button>
         </p>
@@ -25,6 +26,16 @@
         <!-- Ratings list -->
         <div id="ratings-container">
             <div th:replace="~{fragments/rating-items :: rating-items(${ratings}, ${limit})}"></div>
+        </div>
+
+        <!-- Infinite scroll trigger -->
+        <div th:if="${hasMore}"
+             th:hx-get="@{/movie/ratings/more(offset=${offset},limit=${limit})}"
+             hx-trigger="intersect once"
+             hx-target="#ratings-container"
+             hx-swap="beforeend"
+             hx-indicator=".loading-indicator">
+            <div class="loading-indicator">Loading more...</div>
         </div>
     </div>
 
