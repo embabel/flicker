@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="rating-items(ratings, limit)">
+    <div class="ratings-list">
+        <div th:each="rating : ${ratings}" class="rating-item">
+            <div class="rating-card">
+                <h3 th:text="${rating.movie.title}"></h3>
+                <div class="rating-details">
+                    <div class="rating-score" th:text="${'Rating: ' + rating.rating + '/10'}"></div>
+                    <div class="rating-date" th:text="${#temporals.format(rating.timestamp, 'MMM dd, yyyy')}"></div>
+                </div>
+                <div class="movie-details">
+                    <div th:if="${rating.movie.imdbId}" class="imdb-link">
+                        <a th:href="${'https://www.imdb.com/title/' + rating.movie.imdbId}" target="_blank">
+                            View on IMDB
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Infinite scroll trigger -->
+    <div th:if="${hasMore}"
+         hx-get="@{/movie/ratings/more(offset=${offset}, limit=10)}"
+         hx-trigger="revealed"
+         hx-swap="outerHTML"
+         hx-indicator=".loading-indicator">
+        <div class="loading-indicator">Loading more...</div>
+    </div>
+</div>
+</body>
+</html>

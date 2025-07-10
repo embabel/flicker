@@ -37,6 +37,14 @@ class MovieService(
     fun findMovieBuffByEmail(email: String): MovieBuff? {
         return movieBuffRepository.findById(email).orElse(null)
     }
+    
+    @Transactional(readOnly = true)
+    fun getUserRatings(movieBuff: MovieBuff, offset: Int, limit: Int): List<MovieRating> {
+        return movieBuff.movieRatings
+            .sortedByDescending { it.timestamp }
+            .drop(offset)
+            .take(limit)
+    }
 
     @Transactional(readOnly = true)
     fun findMovieBuffByName(name: String): MovieBuff? =

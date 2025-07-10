@@ -1,0 +1,33 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{common/layout :: layout(~{::title}, ~{::section})}">
+<head>
+    <title>
+        <!-- th:text="${movieRecommendations.caption}"-->
+        >Embabel Movie Finder</title>
+    <th:block th:fragment="extraHeadContent">
+        <script src="https://unpkg.com/htmx.org@2.0.5"></script>
+    </th:block>
+</head>
+<body>
+<section>
+    <div class="container">
+        <h1>My Movie Ratings</h1>
+        <p>
+            <a href="/" class="btn btn-primary">Find Movies</a>
+            <button class="btn btn-success" hx-get="/movie/ratings/add" hx-target="#rating-form-container">
+                Add New Rating
+            </button>
+        </p>
+
+        <!-- Container for the add rating form -->
+        <div id="rating-form-container"></div>
+
+        <!-- Ratings list -->
+        <div id="ratings-container">
+            <div th:replace="~{fragments/rating-items :: rating-items(${ratings}, ${limit})}"></div>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

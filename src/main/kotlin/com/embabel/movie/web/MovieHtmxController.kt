@@ -22,26 +22,30 @@ import com.embabel.agent.web.htmx.GenericProcessingValues
 import com.embabel.agent.web.security.EmbabelAuth2User
 import com.embabel.movie.agent.MovieRequest
 import com.embabel.movie.domain.MovieBuff
+import com.embabel.movie.domain.MovieService
 import org.slf4j.LoggerFactory
+import org.springframework.http.MediaType
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.ModelAttribute
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.*
 
 @Controller
 @RequestMapping(value = ["/", "/movie"])
 class MovieHtmxController(
     private val agentPlatform: AgentPlatform,
+    private val movieService: MovieService,
 ) {
 
     private val logger = LoggerFactory.getLogger(MovieHtmxController::class.java)
 
     @GetMapping
-    fun findMovies(model: Model): String {
+    fun findMovies(
+        model: Model,
+        @AuthenticationPrincipal principal: OAuth2User,
+    ): String {
+        model.addAttribute("user", movieBuff(principal))
         model.addAttribute(
             "movieRequest", MovieRequest(
                 preference = "A film with a remarkable musical score",
@@ -57,9 +61,7 @@ class MovieHtmxController(
         @AuthenticationPrincipal
         principal: OAuth2User,
     ): String {
-
-        val movieBuff = (principal as? EmbabelAuth2User)?.getUser() as? MovieBuff
-            ?: error("User is not a movie buff. Please register as a movie buff to find movies.")
+        val movieBuff = movieBuff(principal)
         logger.info("Finding movies for user {} named {}", movieBuff.email, movieBuff.name)
 
         // Convert form to domain objects
@@ -79,6 +81,7 @@ class MovieHtmxController(
         )
 
         model.addAttribute("movieRequest", movieRequest)
+        model.addAttribute("user", movieBuff)
         GenericProcessingValues(
             agentProcess = agentProcess,
             pageTitle = "Finding Movies",
@@ -88,6 +91,95 @@ class MovieHtmxController(
         ).addToModel(model)
         agentPlatform.start(agentProcess)
         return "common/processing"
+    }
+
+    /**
+     * View all ratings for the current user
+     */
+    @GetMapping("/ratings")
+    fun viewRatings(
+        model: Model,
+        @AuthenticationPrincipal principal: OAuth2User
+    ): String {
+        val movieBuff = movieBuff(principal)
+        val limit = 10
+        val ratings = movieService.getUserRatings(movieBuff, 0, limit)
+
+        model.addAttribute("movieBuff", movieBuff)
+        model.addAttribute("ratings", ratings)
+        model.addAttribute("offset", ratings.size)
+        model.addAttribute("limit", limit)
+        model.addAttribute("hasMore", ratings.size < movieBuff.movieRatings.size)
+
+        return "movie-ratings"
+    }
+
+    /**
+     * Load more ratings for infinite scroll
+     */
+    @GetMapping("/ratings/more", produces = [MediaType.TEXT_HTML_VALUE])
+    fun loadMoreRatings(
+        @RequestParam offset: Int,
+        @RequestParam limit: Int = 10,
+        model: Model,
+        @AuthenticationPrincipal principal: OAuth2User,
+    ): String {
+        val movieBuff = movieBuff(principal)
+        logger.info("Loading more ratings for user {} at offset {}", movieBuff.email, offset)
+        val ratings = movieService.getUserRatings(movieBuff, offset, limit)
+
+        model.addAttribute("ratings", ratings)
+        model.addAttribute("offset", offset + ratings.size)
+        model.addAttribute("limit", limit)
+        model.addAttribute("hasMore", offset + ratings.size < movieBuff.movieRatings.size)
+
+        return "fragments/rating-items"
+    }
+
+    /**
+     * Show form to add a new rating
+     */
+    @GetMapping("/ratings/add")
+    fun showRatingForm(model: Model): String {
+        return "add-rating-form"
+    }
+
+    /**
+     * Process a new rating submission
+     */
+    @PostMapping("/ratings/add")
+    fun addRating(
+        @RequestParam title: String,
+        @RequestParam rating: Int,
+        @AuthenticationPrincipal principal: OAuth2User,
+        model: Model
+    ): String {
+        val movieBuff = movieBuff(principal)
+
+        // Since OneThroughTen is just a typealias for Int, we can use the rating directly
+        // after validating it's in the correct range
+        if (rating !in 1..10) {
+            error("Rating must be between 1 and 10")
+        }
+
+        movieService.rate(movieBuff, title, rating)
+        logger.info("Added rating for movie '{}' with score {} by user {}", title, rating, movieBuff.email)
+
+        // Return the newly added rating as HTML fragment
+        val updatedMovieBuff = movieService.findMovieBuffByEmail(movieBuff.email)
+            ?: error("Could not find movie buff after adding rating")
+
+        val latestRating = updatedMovieBuff.movieRatings.minByOrNull { it.movie.title }
+
+        model.addAttribute("ratings", listOfNotNull(latestRating))
+        return "fragments/rating-items"
+    }
+
+    private fun movieBuff(
+        principal: OAuth2User
+    ): MovieBuff {
+        return (principal as? EmbabelAuth2User)?.getUser() as? MovieBuff
+            ?: error("User is not a movie buff. Please register as a movie buff to perform this action.")
     }
 }
 
