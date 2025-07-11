@@ -182,11 +182,46 @@ class MovieHtmxController(
         return "fragments/rating-items"
     }
 
-    private fun movieBuff(
-        principal: OAuth2User
-    ): MovieBuff {
-        return (principal as? EmbabelAuth2User)?.getUser() as? MovieBuff
+    /**
+     * Show form to edit preferences
+     */
+    @GetMapping("/preferences")
+    fun showPreferencesForm(
+        model: Model,
+        @AuthenticationPrincipal principal: OAuth2User
+    ): String {
+        val movieBuff = movieBuff(principal)
+        addCommonAttributes(model, movieBuff)
+        model.addAttribute("movieBuff", movieBuff)
+        return "edit-preferences-form"
+    }
+
+    /**
+     * Process preferences update
+     */
+    @PostMapping("/preferences")
+    fun updatePreferences(
+        @RequestParam movieLikes: String,
+        @RequestParam movieDislikes: String,
+        @AuthenticationPrincipal principal: OAuth2User,
+    ): String {
+        val movieBuff = movieBuff(principal)
+
+        // Update the movie buff preferences
+        movieService.updatePreferences(movieBuff, movieLikes, movieDislikes)
+        logger.info("Updated preferences for user {}", movieBuff.email)
+
+        // Redirect to the movie finder page
+        return "redirect:/movie"
+    }
+
+    private fun movieBuff(principal: OAuth2User): MovieBuff {
+        val embabelUser = (principal as? EmbabelAuth2User)?.getUser() as? MovieBuff
             ?: error("User is not a movie buff. Please register as a movie buff to perform this action.")
+
+        // Always fetch fresh data from database
+        return movieService.findMovieBuffByEmail(embabelUser.email)
+            ?: error("MovieBuff not found in database")
     }
 
     private fun addCommonAttributes(

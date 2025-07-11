@@ -80,4 +80,19 @@ class MovieService(
         logger.info("Recorded movie rating: {}, {}", movie.imdbId, movie.title)
     }
 
+    @Transactional
+    fun updatePreferences(movieBuff: MovieBuff, movieLikes: String, movieDislikes: String) {
+        val updatedMovieBuff = movieBuff.copy(
+            movieLikes = movieLikes,
+            movieDislikes = movieDislikes
+        )
+        movieBuffRepository.save(updatedMovieBuff)
+        logger.info(
+            "Updated preferences for user: {}, likes={}. dislikes={}",
+            movieBuff.email,
+            updatedMovieBuff.movieLikes,
+            updatedMovieBuff.movieDislikes,
+        )
+    }
+
 }

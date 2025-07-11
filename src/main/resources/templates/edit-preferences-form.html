@@ -1,0 +1,30 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{common/layout :: layout(~{::title}, ~{::section})}"
+      th:with="_htmx=true">
+<head>
+    <title>Edit Preferences</title>
+</head>
+<body>
+<section>
+    <h2>Edit Movie Preferences</h2>
+    <p>
+        <a href="/movie" class="movie-button">Back to Movie Finder</a>
+    </p>
+
+    <form action="/movie/preferences" method="post" th:object="${movieBuff}">
+        <div class="form-group">
+            <label for="movieLikes">Movies I Like</label>
+            <textarea id="movieLikes" name="movieLikes" rows="3" cols="40" th:field="*{movieLikes}" required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="movieDislikes">Movies I Dislike</label>
+            <textarea id="movieDislikes" name="movieDislikes" rows="3" cols="40" th:field="*{movieDislikes}" required></textarea>
+        </div>
+
+        <button class="movie-button" type="submit" style="margin-top: 20px;">Save Preferences</button>
+    </form>
+
+</section>
+</body>
+</html>
