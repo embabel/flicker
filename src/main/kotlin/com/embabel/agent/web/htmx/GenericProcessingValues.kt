@@ -14,6 +14,7 @@ data class GenericProcessingValues(
     val detail: String,
     val resultModelKey: String,
     val successView: String,
+    val css: String,
 ) {
 
     fun addToModel(model: Model) {
@@ -22,5 +23,6 @@ data class GenericProcessingValues(
         model.addAttribute("detail", detail)
         model.addAttribute("resultModelKey", resultModelKey)
         model.addAttribute("successView", successView)
+        model.addAttribute("css", css)
     }
 }

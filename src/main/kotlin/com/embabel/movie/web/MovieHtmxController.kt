@@ -87,6 +87,7 @@ class MovieHtmxController(
             detail = movieRequest.preference,
             resultModelKey = "movieRecommendations",
             successView = "movie-recommendations",
+            css = "/css/film_noir.css",
         ).addToModel(model)
         agentPlatform.start(agentProcess)
         return "common/processing"

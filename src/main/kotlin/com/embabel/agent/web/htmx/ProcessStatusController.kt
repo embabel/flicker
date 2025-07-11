@@ -26,6 +26,7 @@ class ProcessStatusController(
         @PathVariable processId: String,
         @RequestParam resultModelKey: String,
         @RequestParam successView: String,
+        @RequestParam css: String,
         model: Model,
     ): String {
         val agentProcess = agentPlatform.getAgentProcess(processId)
@@ -36,6 +37,7 @@ class ProcessStatusController(
                 logger.info("Process {} completed successfully", processId)
                 val lr = agentProcess.lastResult()
                 model.addAttribute(resultModelKey, lr)
+                model.addAttribute("css", css)
                 model.addAttribute("agentProcess", agentProcess)
                 successView
             }
@@ -54,7 +56,7 @@ class ProcessStatusController(
 
             else -> {
                 model.addAttribute("processId", processId)
-                model.addAttribute("pageTitle", "Planning Journey...")
+                model.addAttribute("pageTitle", "Processing...")
                 "common/processing" // Keep showing loading state
             }
         }
