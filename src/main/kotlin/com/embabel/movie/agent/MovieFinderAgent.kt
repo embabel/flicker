@@ -74,13 +74,24 @@ data class StreamableMovie(
     val allStreamingOptions: List<StreamingOption>,
 )
 
+data class StreamableMovieWithTrailer(
+    val movie: MovieResponse,
+    val availableStreamingOptions: List<StreamingOption>,
+    val allStreamingOptions: List<StreamingOption>,
+    val trailerUrl: String,
+)
+
+data class StreamableMoviesWithTrailers(
+    val movies: List<StreamableMovieWithTrailer>,
+)
+
 /**
  * Structured recommendations
  */
 data class MovieRecommendations(
     val caption: String,
     val writeup: String,
-    val movies: List<StreamableMovie>,
+    val movies: List<StreamableMovieWithTrailer>,
 ) : HasContent {
 
     override val content get() = writeup
@@ -215,7 +226,6 @@ class MovieFinderAgent(
      * - Blackboard data sharing (context += suggestedMovieTitles)
      * - Multi-stage processing (title generation → movie lookup → streaming availability)
      *
-     * @param userInput The original user request
      * @param dmb The DecoratedMovieBuff with taste profile
      * @param context The action context
      * @return StreamableMovies containing available movie recommendations
@@ -432,6 +442,22 @@ class MovieFinderAgent(
         .distinct()
         .sorted()
 
+    @Action(pre = [HAVE_ENOUGH_MOVIES])
+    fun findTrailers(context: OperationContext): StreamableMoviesWithTrailers {
+        val recommendedMovies = allStreamableMovies(context)
+        return StreamableMoviesWithTrailers(
+            movies = context.parallelMap(recommendedMovies, 15) { movie ->
+                val trailerUrl = findTrailer(movie, context)
+                StreamableMovieWithTrailer(
+                    movie = movie.movie,
+                    availableStreamingOptions = movie.availableStreamingOptions,
+                    allStreamingOptions = movie.allStreamingOptions,
+                    trailerUrl = trailerUrl,
+                )
+            }
+        )
+    }
+
     /**
      * Final action that creates a personalized writeup of movie recommendations.
      *
@@ -447,14 +473,13 @@ class MovieFinderAgent(
      * @param context The action context
      * @return SuggestionWriteup containing the formatted recommendations
      */
-    @Action(pre = [HAVE_ENOUGH_MOVIES])
+    @Action
     @AchievesGoal(description = "Recommend movies for a movie buff using what we know about them")
     fun writeUpSuggestions(
         dmb: DecoratedMovieBuff,
-        streamableMovies: StreamableMovies,
+        streamableMovies: StreamableMoviesWithTrailers,
         context: OperationContext,
     ): MovieRecommendations {
-        val recommendedMovies = allStreamableMovies(context)
         val writeup = context.promptRunner(
             llm = config.llm,
             promptContributors = listOf(config.suggesterPersona)
@@ -469,15 +494,17 @@ class MovieFinderAgent(
                 
                 Include a CONCISE caption for the writeup. 
                 It should not include the movie buff's name and be no more than 5 words.
+                Include a link to the trailer for each movie, if available.
 
                 The streamable movie recommendations are:
                 ${
-                recommendedMovies.joinToString("\n\n") {
+                streamableMovies.movies.joinToString("\n\n") {
                     """
                         ${it.movie.title} (${it.movie.year}): ${it.movie.imdbId}
                         Director: ${it.movie.director}
                         Actors: ${it.movie.actors}
                         ${it.movie.plot}
+                        Trailer: ${it.trailerUrl}
                         FREE Streaming available to ${dmb.movieBuff.name} on ${
                         it.availableStreamingOptions.joinToString(
                             ", "
@@ -497,8 +524,19 @@ class MovieFinderAgent(
         return MovieRecommendations(
             caption = writeup.caption,
             writeup = writeup.writeup,
-            movies = recommendedMovies,
+            movies = streamableMovies.movies,
         )
+    }
+
+    private fun findTrailer(movie: StreamableMovie, context: OperationContext): String {
+        val pr = context.promptRunner().withToolGroup(CoreToolGroups.WEB)
+        val id = pr.generateText(
+            """
+                What is the YouTube id for the trailer of the movie ${movie.movie.title} (${movie.movie.year})?
+                Return just the id, nothing else.               
+                """.trimIndent()
+        ).trim()
+        return id
     }
 
     companion object {

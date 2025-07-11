@@ -10,6 +10,7 @@
 <section>
     <div th:if="${movieRecommendations != null}">
         <h2 th:text="${movieRecommendations.caption}"></h2>
+        
 
         <div class="recommendation-container">
             <p th:utext="${movieRecommendations.writeup}"></p>
