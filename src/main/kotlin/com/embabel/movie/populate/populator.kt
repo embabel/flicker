@@ -43,7 +43,9 @@ class StartupDataInitializer(
                 He is widely traveled and has lived in California and the UK
                 before returning to Sydney.
             """.trimIndent(),
-                streamingServices = listOf("Netflix", "Stan", "Disney+")
+                streamingServices = listOf("Netflix", "Stan", "Disney+"),
+                movieLikes = "Complex plots, film noir",
+                movieDislikes = "Predictable endings, formulaic blockbusters, anime",
             )
             loadRatings(rod, "movie/rod_ratings.tsv")
             movieService.save(rod)

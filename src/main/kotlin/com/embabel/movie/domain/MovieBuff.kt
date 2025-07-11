@@ -23,6 +23,8 @@ data class MovieBuff(
     )
     @Column(name = "hobby")
     val hobbies: List<String>,
+    val movieLikes: String,
+    val movieDislikes: String,
     val about: String,
     val streamingServices: List<String>,
 ) : User {
