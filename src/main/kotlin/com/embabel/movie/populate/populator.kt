@@ -19,6 +19,7 @@ import com.embabel.common.util.RandomFromFileMessageGenerator
 import com.embabel.movie.domain.MovieBuff
 import com.embabel.movie.domain.MovieService
 import com.embabel.movie.domain.StreamingService
+import com.embabel.movie.domain.StreamingServiceRepository
 import jakarta.annotation.PostConstruct
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -27,14 +28,18 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional
 class StartupDataInitializer(
     private val movieService: MovieService,
+    private val streamingServiceRepository: StreamingServiceRepository,
 ) {
 
     @PostConstruct
     fun init() {
 
         val netflix = StreamingService("Netflix", "https://www.netflix.com")
+        streamingServiceRepository.save(netflix)
         val stan = StreamingService("Stan", "https://www.stan.com.au")
+        streamingServiceRepository.save(stan)
         val disneyPlus = StreamingService("Disney+", "https://www.disneyplus.com")
+        streamingServiceRepository.save(disneyPlus)
 
         val name = "Rod"
         if (movieService.findMovieBuffByName(name) == null) {

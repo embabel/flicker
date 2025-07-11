@@ -27,7 +27,12 @@ data class MovieBuff(
     val movieLikes: String = "",
     val movieDislikes: String = "",
     val about: String = "",
-    @OneToMany(fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "movie_buff_streaming_services",
+        joinColumns = [JoinColumn(name = "movie_buff_id")],
+        inverseJoinColumns = [JoinColumn(name = "streaming_service_id")]
+    )
     val streamingServices: MutableList<StreamingService> = mutableListOf(),
 ) : User {
 
