@@ -1,0 +1,44 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{common/layout :: layout(~{::title}, ~{::section})}"
+      th:with="_htmx=true">
+<head>
+
+    <title>Flicker</title>
+
+</head>
+<body>
+<section>
+    <div class="container">
+        <h2 th:text="${user.name} + '\'s Movie Ratings'">My Movie Ratings</h2>
+        <p>
+            <!-- Replace whole page -->
+            <button class="movie-button" hx-get="/" hx-target="body" hx-swap="outerHTML">
+                Find movies
+            </button>
+            <button class="movie-button" hx-get="/movie/ratings/add" hx-target="#rating-form-container">
+                Add New Rating
+            </button>
+        </p>
+
+        <!-- Container for the add rating form -->
+        <div id="rating-form-container"></div>
+
+        <!-- Ratings list -->
+        <div id="ratings-container">
+            <div th:replace="~{fragments/rating-items :: rating-items(${ratings}, ${limit})}"></div>
+        </div>
+
+        <!-- Infinite scroll trigger -->
+        <div th:if="${hasMore}"
+             th:hx-get="@{/movie/ratings/more(offset=${offset},limit=${limit})}"
+             hx-trigger="intersect once"
+             hx-target="#ratings-container"
+             hx-swap="beforeend"
+             hx-indicator=".loading-indicator">
+            <div class="loading-indicator">Loading more...</div>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

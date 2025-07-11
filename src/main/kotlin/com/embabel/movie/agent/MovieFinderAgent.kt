@@ -13,29 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.embabel.movie
+package com.embabel.movie.agent
 
 import com.embabel.agent.api.annotation.*
-import com.embabel.agent.api.common.ActionContext
 import com.embabel.agent.api.common.OperationContext
+import com.embabel.agent.api.common.create
 import com.embabel.agent.api.common.createObject
 import com.embabel.agent.config.models.OpenAiModels
 import com.embabel.agent.core.CoreToolGroups
 import com.embabel.agent.core.all
-import com.embabel.agent.core.hitl.ConfirmationRequest
-import com.embabel.agent.domain.io.UserInput
 import com.embabel.agent.domain.library.HasContent
 import com.embabel.agent.domain.library.RelevantNewsStories
 import com.embabel.agent.event.ProgressUpdateEvent
 import com.embabel.agent.prompt.persona.Persona
 import com.embabel.common.ai.model.LlmOptions
 import com.embabel.common.ai.model.ModelSelectionCriteria.Companion.byName
+import com.embabel.movie.domain.MovieBuff
+import com.embabel.movie.service.MovieResponse
+import com.embabel.movie.service.OmdbClient
+import com.embabel.movie.service.StreamingAvailabilityClient
+import com.embabel.movie.service.StreamingOption
+import com.fasterxml.jackson.annotation.JsonPropertyDescription
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Profile
 import kotlin.math.min
 
 typealias OneThroughTen = Int
+
+data class MovieRequest(
+    val preference: String,
+)
 
 data class DecoratedMovieBuff(
     val movieBuff: MovieBuff,
@@ -66,9 +74,17 @@ data class StreamableMovie(
     val allStreamingOptions: List<StreamingOption>,
 )
 
-data class SuggestionWriteup(
-    override val content: String,
-) : HasContent
+/**
+ * Structured recommendations
+ */
+data class MovieRecommendations(
+    val caption: String,
+    val writeup: String,
+    val movies: List<StreamableMovie>,
+) : HasContent {
+
+    override val content get() = writeup
+}
 
 
 val Roger = Persona(
@@ -124,39 +140,10 @@ data class MovieFinderConfig(
 class MovieFinderAgent(
     private val omdbClient: OmdbClient,
     private val streamingAvailabilityClient: StreamingAvailabilityClient,
-    private val movieBuffRepository: MovieBuffRepository,
     private val config: MovieFinderConfig,
 ) {
 
     private val logger = LoggerFactory.getLogger(MovieFinderAgent::class.java)
-
-    /**
-     * First action in the workflow that identifies a MovieBuff based on user input.
-     *
-     * This action demonstrates:
-     * - Entity retrieval from a repository
-     * - Natural language matching for entity lookup
-     * - Human-in-the-loop confirmation pattern
-     *
-     * @param userInput The input from the user containing information to identify a MovieBuff
-     * @param context The action context providing access to framework capabilities
-     * @return The identified MovieBuff or null if none found
-     */
-    @Action(description = "Retrieve a MovieBuff based on the user input")
-    fun findMovieBuff(userInput: UserInput, context: OperationContext): MovieBuff? =
-        MovieBuffFinderTools(movieBuffRepository).findEntity(
-            context.promptRunner(),
-            userInput.content,
-        ) { movieBuff ->
-            if (!config.confirmMovieBuff) {
-                null
-            } else
-                ConfirmationRequest(
-                    movieBuff,
-                    "Please confirm whether this is the movie buff you meant: ${movieBuff.name}",
-                )
-        }
-
 
     /**
      * Analyzes the taste profile of a MovieBuff using LLM to understand their preferences.
@@ -181,7 +168,7 @@ class MovieFinderAgent(
                 They have rated the following movies out of 10:
                 ${
                     movieBuff.randomRatings(50).joinToString("\n") {
-                        "${it.title}: ${it.rating}"
+                        "${it.movie.title}: ${it.rating}"
                     }
                 }
 
@@ -195,22 +182,10 @@ class MovieFinderAgent(
         )
     }
 
-    /**
-     * Finds relevant news stories that might inspire movie recommendations.
-     *
-     * This action demonstrates:
-     * - Integration with web tools for real-time data
-     * - Context-aware searching based on user profile
-     * - Object creation from LLM output
-     *
-     * @param dmb The DecoratedMovieBuff containing user preferences
-     * @param userInput The original user input for additional context
-     * @return RelevantNewsStories containing news that might inspire recommendations
-     */
     @Action(toolGroups = [CoreToolGroups.WEB])
     fun findNewsStories(
         dmb: DecoratedMovieBuff,
-        userInput: UserInput
+        movieRequest: MovieRequest
     ): RelevantNewsStories =
         using(config.llm).createObject(
             """
@@ -219,7 +194,7 @@ class MovieFinderAgent(
             Their movie taste profile is ${dmb.tasteProfile}
             About them: "${dmb.movieBuff.about}"
 
-            Consider the following specific request that may govern today's choice: '${userInput.content}'
+            Consider the following specific request that may govern today's choice: '${movieRequest.preference}'
 
             Given this, use web tools and generate search queries
             to find 5 relevant news stories that might inspire
@@ -227,7 +202,6 @@ class MovieFinderAgent(
             Don't look for movie news but general news that might interest them.
             If possible, look for news specific to the specific request.
             Country: ${dmb.movieBuff.countryCode}
-            Current date: ${userInput.timestamp}
             """.trimIndent()
         )
 
@@ -251,7 +225,7 @@ class MovieFinderAgent(
         canRerun = true,
     )
     fun suggestMovies(
-        userInput: UserInput,
+        movieRequest: MovieRequest,
         dmb: DecoratedMovieBuff,
         relevantNewsStories: RelevantNewsStories,
         context: OperationContext,
@@ -263,7 +237,7 @@ class MovieFinderAgent(
             """
             Suggest ${config.suggestionCount} movie titles that ${dmb.movieBuff.name} hasn't seen, but may find interesting.
 
-            Consider the specific request: "${userInput.content}"
+            Consider the specific request: "${movieRequest.preference}"
 
             Use the information about their preferences from below:
             Their movie taste: "${dmb.tasteProfile}"
@@ -274,9 +248,9 @@ class MovieFinderAgent(
             Don't include the following movies, which they've seen (rating attached):
             ${
                 dmb.movieBuff.movieRatings
-                    .sortedBy { it.title }
+                    .sortedBy { it.movie.title }
                     .joinToString("\n") {
-                        "${it.title}: ${it.rating}"
+                        "${it.movie.title}: ${it.rating}"
                     }
             }
             Don't include these movies we've already suggested:
@@ -343,13 +317,13 @@ class MovieFinderAgent(
             // Sometimes the LLM ignores being told not to
             // include movies the user has seen
             .filterNot { movie ->
-                movie.Title in movieBuff.movieRatings.map { it.title }
+                movie.imdbId in movieBuff.movieRatings.map { it.movie.imdbId }
             }
             .mapNotNull { movie ->
                 try {
                     val allStreamingOptions =
                         streamingAvailabilityClient.getShowStreamingIn(
-                            imdb = movie.imdbID,
+                            imdb = movie.imdbId,
                             country = movieBuff.countryCode,
                         ).distinct()
                     val availableToUser = allStreamingOptions.filter {
@@ -357,7 +331,7 @@ class MovieFinderAgent(
                     }
                     logger.debug(
                         "Movie {} available in [{}] on {}: {} can watch it free on {}",
-                        movie.Title,
+                        movie.title,
                         movieBuff.countryCode,
                         allStreamingOptions.map { it.service.name }.sorted().joinToString(", "),
                         movieBuff.name,
@@ -366,7 +340,7 @@ class MovieFinderAgent(
                     if (allStreamingOptions.isEmpty()) {
                         logger.info(
                             "Movie {} not available to {} in their country {} - filtering it out",
-                            movie.Title,
+                            movie.title,
                             movieBuff.name,
                             movieBuff.countryCode,
                         )
@@ -380,7 +354,7 @@ class MovieFinderAgent(
                     } else if (desperationMode) {
                         logger.info(
                             "Movie {} not available to {} on any of their streaming services but we're in desperation mode",
-                            movie.Title,
+                            movie.title,
                             movieBuff.name,
                         )
                         StreamableMovie(
@@ -391,7 +365,7 @@ class MovieFinderAgent(
                     } else {
                         logger.info(
                             "Movie {} not available to {} on any of their streaming services and we're not yet in desperation mode {} - filtering it out",
-                            movie.Title,
+                            movie.title,
                             movieBuff.name,
                             movieBuff.streamingServices.sorted().joinToString(", ")
                         )
@@ -427,10 +401,10 @@ class MovieFinderAgent(
         val streamableMovies = context
             .all<StreamableMovies>()
             .flatMap { it.movies }
-            .distinctBy { it.movie.imdbID }
+            .distinctBy { it.movie.imdbId }
         context.processContext.onProcessEvent(
             ProgressUpdateEvent(
-                agentProcess = context.processContext.agentProcess,
+                agentProcess = context.agentProcess,
                 name = "Streamable movies",
                 current = min(streamableMovies.size, config.suggestionCount),
                 total = config.suggestionCount,
@@ -454,7 +428,7 @@ class MovieFinderAgent(
         context: OperationContext,
     ): List<String> = context
         .all<SuggestedMovieTitles>()
-        .flatMap { it.titles } + allStreamableMovies(context).map { it.movie.Title }
+        .flatMap { it.titles } + allStreamableMovies(context).map { it.movie.title }
         .distinct()
         .sorted()
 
@@ -478,43 +452,52 @@ class MovieFinderAgent(
     fun writeUpSuggestions(
         dmb: DecoratedMovieBuff,
         streamableMovies: StreamableMovies,
-        context: ActionContext,
-    ): SuggestionWriteup {
-        val text = context.promptRunner(
+        context: OperationContext,
+    ): MovieRecommendations {
+        val recommendedMovies = allStreamableMovies(context)
+        val writeup = context.promptRunner(
             llm = config.llm,
             promptContributors = listOf(config.suggesterPersona)
-        ) generateText
-                """
+        ).create<MovieWriteup>(
+            """
                 Write up a recommendation of ${config.suggestionCount} movies in ${config.writeupWordCount} words
                 for ${dmb.movieBuff.name}
                 based on the following information:
                 Their hobbies are ${dmb.movieBuff.hobbies.joinToString(", ")}
                 Their movie taste profile is ${dmb.tasteProfile}
                 A bit about them: "${dmb.movieBuff.about}"
+                
+                Include a CONCISE caption for the writeup. 
+                It should not include the movie buff's name and be no more than 5 words.
 
                 The streamable movie recommendations are:
                 ${
-                    allStreamableMovies(context).joinToString("\n\n") {
-                        """
-                        ${it.movie.Title} (${it.movie.Year}): ${it.movie.imdbID}
-                        Director: ${it.movie.Director}
-                        Actors: ${it.movie.Actors}
-                        ${it.movie.Plot}
+                recommendedMovies.joinToString("\n\n") {
+                    """
+                        ${it.movie.title} (${it.movie.year}): ${it.movie.imdbId}
+                        Director: ${it.movie.director}
+                        Actors: ${it.movie.actors}
+                        ${it.movie.plot}
                         FREE Streaming available to ${dmb.movieBuff.name} on ${
-                            it.availableStreamingOptions.joinToString(
-                                ", "
-                            ) { "${it.service.name} at ${it.link}" }
-                        }
+                        it.availableStreamingOptions.joinToString(
+                            ", "
+                        ) { "${it.service.name} at ${it.link}" }
+                    }
                         All streaming options: ${it.allStreamingOptions.joinToString(", ") { "${it.service.name} at ${it.link}" }}
                         """.trimIndent()
-                    }
                 }
+            }
 
-                Format in Markdown and include links to the movies on IMDB and the streaming service link(s) for each.
+                Format in HTML.
+                Use unordered lists as appropriate.
+                Start any headings at <h4>
+                Include links to the movies on IMDB and the streaming service link(s) for each.
                 List those with FREE streaming first and call that out.
-                """.trimIndent()
-        return SuggestionWriteup(
-            content = text,
+                """.trimIndent())
+        return MovieRecommendations(
+            caption = writeup.caption,
+            writeup = writeup.writeup,
+            movies = recommendedMovies,
         )
     }
 
@@ -522,3 +505,9 @@ class MovieFinderAgent(
         const val HAVE_ENOUGH_MOVIES = "haveEnoughMovies"
     }
 }
+
+private data class MovieWriteup(
+    @field:JsonPropertyDescription("Caption for the writeup, to be used as a title")
+    val caption: String,
+    val writeup: String,
+)

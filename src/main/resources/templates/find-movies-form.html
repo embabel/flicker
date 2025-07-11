@@ -1,0 +1,25 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{common/layout :: layout(~{::title}, ~{::section})}"
+      th:with="_htmx=true">
+<head>
+    <title>Flicker</title>
+</head>
+<body>
+<section>
+    <h2>Embabel Flicker</h2>
+    <p>
+        <a href="/movie/ratings" class="movie-button">View My [[${user.movieRatings.size()}]] Ratings</a>
+    </p>
+
+    <form action="/movie/find-movies" method="post" th:object="${movieRequest}">
+        <div class="form-group">
+            <label for="brief">What I want</label>
+            <textarea id="brief" name="brief" rows="3" cols="40" th:field="*{preference}" required></textarea>
+        </div>
+
+        <button class="movie-button" type="submit" style="margin-top: 20px;">Find Movies</button>
+    </form>
+
+</section>
+</body>
+</html>

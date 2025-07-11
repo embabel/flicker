@@ -1,0 +1,335 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{common/layout :: layout(~{::title}, ~{::section})}">
+<head>
+    <th:block th:fragment="extraHeadContent">
+        <script src="https://unpkg.com/htmx.org@2.0.5"></script>
+        <script src="https://unpkg.com/htmx.org@2.2.2/dist/ext/sse.js"></script>
+    </th:block>
+    <title>Processing</title>
+
+</head>
+<body>
+<section>
+    <h2 th:text="${pageTitle}"></h2>
+    <div id="journey-container">
+        <div id="journey-status">
+            <div class="working">
+                <p th:text="${detail}"></p>
+
+                <div class="process-controls">
+                    <button type="button"
+                            th:hx-delete="@{/api/v1/process/{id}(id=${processId})}"
+                            hx-confirm="Are you sure you want to kill this process?"
+                            hx-target="this"
+                            hx-swap="outerHTML"
+                            class="scary-delete-btn">
+                        Kill Process
+                    </button>
+                </div>
+                <div class="spinner"></div>
+            </div>
+        </div>
+        <div id="current-plan">
+            <h3>Plan</h3>
+            <div id="plan-content"></div>
+        </div>
+        <div id="sse-updates">
+            <p id="init-message">Initializing...</p>
+        </div>
+    </div>
+
+    <!-- Template for process updates -->
+    <template id="update-template">
+        <div class="process-update">
+            <div class="update-header" data-field="header"></div>
+            <div class="update-details" data-field="details"></div>
+            <div class="update-details" data-field="event-type"></div>
+            <div class="progress-container hidden" data-field="progress">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                <div class="progress-text"></div>
+            </div>
+            <pre class="json-content hidden" data-field="json"></pre>
+        </div>
+    </template>
+
+    <style>
+        .progress-container {
+            margin-top: 8px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            margin-top: 4px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+
+    <script>
+        const processId = '[[${processId}]]';
+        const eventSource = new EventSource(`/events/process/${processId}`);
+        const updatesContainer = document.getElementById('sse-updates');
+        const initMessage = document.getElementById('init-message');
+        const updateTemplate = document.getElementById('update-template');
+        const currentPlanElement = document.getElementById('current-plan');
+        const planContentElement = document.getElementById('plan-content');
+
+        // Store tool call elements by their ID for later updates
+        const toolCallElements = new Map();
+        // Store progress elements by correlation ID for updates
+        const progressElements = new Map();
+
+        function createUpdateElement(data) {
+            // Clone the template
+            const clone = updateTemplate.content.cloneNode(true);
+            const updateDiv = clone.querySelector('.process-update');
+
+            // Get all the field elements
+            const headerEl = updateDiv.querySelector('[data-field="header"]');
+            const detailsEl = updateDiv.querySelector('[data-field="details"]');
+            const eventTypeEl = updateDiv.querySelector('[data-field="event-type"]');
+            const jsonEl = updateDiv.querySelector('[data-field="json"]');
+            const progressEl = updateDiv.querySelector('[data-field="progress"]');
+
+            // Set content based on event type
+            let headerText = "";
+            let detailsText = "";
+            let showJson = false;
+            let showProgress = false;
+
+            switch (data.type) {
+                case 'AgentProcessPlanFormulatedEvent':
+                    headerText = `📋 Plan Formulated`;
+                    if (data.plan?.actions) {
+                        const history =
+                            data.history.map(ai => ai.actionName)
+                        const planned = data.plan.actions.map(action => action.name);
+                        const actionsList = history.concat(planned).map((action, index) => {
+                            let icon;
+                            if (history.includes(action)) {
+                                icon = "✅"; // Completed actions
+                            } else if (index === history.length) {
+                                icon = "⚙️"; // First planned action (currently working)
+                            } else {
+                                icon = "☐"; // Other planned actions
+                            }
+
+                            return `<li class="plan-action-item">
+            <div class="action-icon">${icon}</div>
+            <div class="action-name">${action}</div>
+         </li>`;
+                        }).join('');
+
+                        detailsText = "See Plan panel";
+
+                        // Update sticky plan area with styled HTML elements
+                        planContentElement.innerHTML = `
+                        <span class="plan-action-item">🎯&nbsp;&nbsp;Goal: ${data.plan?.goal?.description} (${data.plan?.goal?.name})</span>
+                            <ul class="plan-actions-list">
+                                ${actionsList}
+                            </ul>
+                        `;
+                        // Make the current plan visible
+                        currentPlanElement.classList.add('visible');
+                    } else {
+                        detailsText = 'Plan details not available';
+                    }
+                    break;
+
+                case 'ActionExecutionStartEvent':
+                    headerText = `🚀 Executing Action`;
+                    detailsText = data.action?.name?.replace('_', ' ') || 'Unknown action';
+                    break;
+                case 'ObjectAddedEvent':
+                    headerText = `➕ Object Added`;
+                    detailsText = `Object of type ${data.type}`;
+                    break;
+                case 'ObjectBoundEvent':
+                    headerText = `➕ Object Added`;
+                    detailsText = `${data.name} = object of type ${data.type}`;
+                    break;
+                case 'ToolCallRequestEvent':
+                    headerText = `🔧 Tool Call`;
+                    detailsText = `${data.tool} ${data.toolInput}`;
+                    // Store the element reference with the tool call ID
+                    if (data.id) {
+                        updateDiv.setAttribute('data-tool-call-id', data.correlationId);
+                        toolCallElements.set(data.id, updateDiv);
+                    }
+                    break;
+                case 'ProgressUpdateEvent':
+                    headerText = `📊 Progress Update`;
+                    detailsText = `${data.current} of ${data.total} completed`;
+                    showProgress = true;
+
+                    // Store for potential future updates
+                    if (data.correlationId) {
+                        updateDiv.setAttribute('data-progress-id', data.correlationId);
+                        progressElements.set(data.correlationId, updateDiv);
+                    }
+
+                    // Set up progress bar
+                    const progressBar = progressEl.querySelector('.progress-fill');
+                    const progressText = progressEl.querySelector('.progress-text');
+                    const percentage = Math.round((data.current / data.total) * 100);
+
+                    progressBar.style.width = `${percentage}%`;
+                    progressText.textContent = `${percentage}% (${data.current}/${data.total})`;
+                    break;
+                case 'LlmRequestEvent':
+                    headerText = `🤖 LLM Call - ${data.llm?.name}`;
+                    detailsText = data.prompt;
+                    break;
+                case 'LlmResponseEvent':
+                    headerText = `💬 LLM Response - ${data.llm.name}`;
+                    showJson = true;
+                    jsonEl.textContent = JSON.stringify(data.response, null, 2);
+                    break;
+                default:
+                    // headerText = `⚡ ${data.type.replace('Event', '')}`;
+                    // detailsText = 'Processing...'
+                    // Don't add a box for unrecognized events
+                    return null;
+            }
+
+            // Update element content
+            headerEl.textContent = headerText;
+            detailsEl.textContent = detailsText;
+            // eventTypeEl.textContent = `Event: ${data.type}`;
+
+            // Show/hide progress based on event type
+            if (showProgress) {
+                progressEl.classList.remove('hidden');
+            }
+
+            // Show/hide JSON based on event type
+            if (showJson) {
+                jsonEl.classList.remove('hidden');
+            }
+
+            return updateDiv;
+        }
+
+        function updateToolCallElement(data) {
+            if (!data.request?.correlationId || !toolCallElements.has(data.request.correlationId)) {
+                return false;
+            }
+
+            const toolCallElement = toolCallElements.get(data.request.correlationId);
+            const detailsEl = toolCallElement.querySelector('[data-field="details"]');
+            const jsonEl = toolCallElement.querySelector('[data-field="json"]');
+
+            // Update the header to indicate it's now a response
+            const headerEl = toolCallElement.querySelector('[data-field="header"]');
+            headerEl.textContent = '🔧 Tool Call (Completed)';
+
+            // Append response to details
+            const originalDetails = detailsEl.textContent;
+            detailsEl.textContent = `${originalDetails}\nResponse received`;
+
+            // Show the JSON response
+            jsonEl.textContent = JSON.stringify(data.response, null, 2);
+            jsonEl.classList.remove('hidden');
+
+            return true;
+        }
+
+        function updateProgressElement(data) {
+            if (!data.correlationId || !progressElements.has(data.correlationId)) {
+                return false;
+            }
+
+            const progressElement = progressElements.get(data.correlationId);
+            const detailsEl = progressElement.querySelector('[data-field="details"]');
+            const progressEl = progressElement.querySelector('[data-field="progress"]');
+            const progressBar = progressEl.querySelector('.progress-fill');
+            const progressText = progressEl.querySelector('.progress-text');
+
+            // Update details text
+            detailsEl.textContent = `${data.current} of ${data.total} completed`;
+
+            // Update progress bar
+            const percentage = Math.round((data.current / data.total) * 100);
+            progressBar.style.width = `${percentage}%`;
+            progressText.textContent = `${percentage}% (${data.current}/${data.total})`;
+
+            return true;
+        }
+
+        eventSource.addEventListener('agent-process-event', function (event) {
+            const data = JSON.parse(event.data);
+
+            // Handle completion events
+            if (data.type === "GoalAchievedEvent") {
+                eventSource.close();
+
+                // Get values from template context
+                window.location.href = `/status/${processId}?resultModelKey=[[${resultModelKey}]]&successView=[[${successView}]]&css=[[${css}]]`;
+                return;
+            }
+
+            // Remove initialization message on first real update
+            if (initMessage && !initMessage.classList.contains('hidden')) {
+                initMessage.classList.add('hidden');
+            }
+
+            // Handle tool call responses by updating existing elements
+            if (data.type === 'ToolCallResponseEvent') {
+                const updated = updateToolCallElement(data);
+                if (updated) {
+                    // No need to create a new element
+                    return;
+                }
+            }
+
+            // Handle progress updates by updating existing elements
+            if (data.type === 'ProgressUpdateEvent' && data.correlationId) {
+                const updated = updateProgressElement(data);
+                if (updated) {
+                    // No need to create a new element
+                    return;
+                }
+            }
+
+            // Create and append new update element
+            const updateElement = createUpdateElement(data);
+            if (updateElement) {  // Only append if an element was created
+                updatesContainer.appendChild(updateElement);
+                // Auto-scroll to latest update
+                updateElement.scrollIntoView({behavior: 'smooth'});
+            }
+        });
+
+        eventSource.addEventListener('error', function (event) {
+            console.error('EventSource error:', event);
+            const errorUpdate = createUpdateElement({
+                type: 'ConnectionError',
+                message: 'Connection to server lost'
+            });
+            updatesContainer.appendChild(errorUpdate);
+        });
+    </script>
+</section>
+</body>
+</html>

@@ -1,21 +1,42 @@
 
     set client_min_messages = WARNING;
 
-    alter table if exists movie_finder.movie_buff_hobbies 
+    alter table if exists flicker.movie_buff_hobbies 
        drop constraint if exists FKj7wdgfh27njulqcag0eqwq374;
 
-    alter table if exists movie_finder.movie_buff_movie_rating 
-       drop constraint if exists FK5axeq8jjujsgtb2b8qa9fvwtw;
+    alter table if exists flicker.movie_buff_movie_ratings 
+       drop constraint if exists FK8pwc1lpa173nok67hmybt3du;
 
-    alter table if exists movie_finder.movie_buff_movie_rating 
-       drop constraint if exists FKsvgif3lsiyiupvc1bojf2rrk9;
+    alter table if exists flicker.movie_buff_movie_ratings 
+       drop constraint if exists FKo77n808aqc7xb2nu0ij97c0xt;
 
-    drop table if exists movie_finder.movie_buff_hobbies cascade;
+    drop table if exists flicker.movie_buff_hobbies cascade;
 
-    drop table if exists movie_finder.movie_buff cascade;
+    drop table if exists flicker.movie_buff cascade;
 
-    drop table if exists movie_finder.movie_buff_movie_rating cascade;
+    drop table if exists flicker.movie_buff_movie_ratings cascade;
 
-    drop table if exists movie_finder.movie_rating cascade;
+    drop table if exists flicker.movie_guide cascade;
 
-    drop schema movie_finder;
+    drop table if exists flicker.movie_rating cascade;
+
+    set client_min_messages = WARNING;
+
+    alter table if exists flicker.movie_buff_hobbies 
+       drop constraint if exists FKj7wdgfh27njulqcag0eqwq374;
+
+    alter table if exists flicker.movie_buff_movie_ratings 
+       drop constraint if exists FK8pwc1lpa173nok67hmybt3du;
+
+    alter table if exists flicker.movie_buff_movie_ratings 
+       drop constraint if exists FKo77n808aqc7xb2nu0ij97c0xt;
+
+    drop table if exists flicker.movie_buff_hobbies cascade;
+
+    drop table if exists flicker.movie_buff cascade;
+
+    drop table if exists flicker.movie_buff_movie_ratings cascade;
+
+    drop table if exists flicker.movie_guide cascade;
+
+    drop table if exists flicker.movie_rating cascade;

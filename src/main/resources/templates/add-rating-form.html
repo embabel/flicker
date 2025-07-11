@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<body>
+<div class="rating-form-container">
+    <h3>Rate a Movie</h3>
+    <form hx-post="/movie/ratings/add"
+          hx-target="#ratings-container"
+          hx-swap="afterbegin"
+          hx-on::after-request="this.reset(); document.getElementById('rating-form-container').innerHTML = '';">
+        <div class="form-group">
+            <label for="title">Movie Title</label>
+            <input type="text" id="title" name="title" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="rating">Your Rating (1-10)</label>
+            <select id="rating" name="rating" class="form-control" required>
+                <option value="">Select a rating</option>
+                <option value="1">1 - Terrible</option>
+                <option value="2">2 - Very Bad</option>
+                <option value="3">3 - Bad</option>
+                <option value="4">4 - Below Average</option>
+                <option value="5">5 - Average</option>
+                <option value="6">6 - Above Average</option>
+                <option value="7">7 - Good</option>
+                <option value="8">8 - Very Good</option>
+                <option value="9">9 - Excellent</option>
+                <option value="10">10 - Masterpiece</option>
+            </select>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="movie-button">Submit Rating</button>
+            <button type="button" class="btn btn-secondary"
+                    onclick="document.getElementById('rating-form-container').innerHTML = '';">
+                Cancel
+            </button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

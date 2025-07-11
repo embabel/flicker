@@ -1,0 +1,26 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{common/layout :: layout(~{::title}, ~{::section})}">
+<head>
+    <title th:text="${movieRecommendations.caption}">Embabel Movie Finder</title>
+    <th:block th:fragment="extraHeadContent">
+        <script src="https://unpkg.com/htmx.org@2.0.5"></script>
+    </th:block>
+</head>
+<body>
+<section>
+    <div th:if="${movieRecommendations != null}">
+        <h2 th:text="${movieRecommendations.caption}"></h2>
+
+        <p th:utext="${movieRecommendations.writeup}"></p>
+
+
+        <button class="movie-button" onclick="window.location.href = '/'">
+            Look for more movies
+        </button>
+    </div>
+
+    <hr class="dotted"/>
+    <div id="currenxt-plan" th:replace="~{common/fragments/plan-complete :: plan-complete}"></div>
+</section>
+</body>
+</html>
