@@ -44,9 +44,47 @@
             <div class="update-header" data-field="header"></div>
             <div class="update-details" data-field="details"></div>
             <div class="update-details" data-field="event-type"></div>
+            <div class="progress-container hidden" data-field="progress">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                <div class="progress-text"></div>
+            </div>
             <pre class="json-content hidden" data-field="json"></pre>
         </div>
     </template>
+
+    <style>
+        .progress-container {
+            margin-top: 8px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            margin-top: 4px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
 
     <script>
         const processId = '[[${processId}]]';
@@ -59,6 +97,8 @@
 
         // Store tool call elements by their ID for later updates
         const toolCallElements = new Map();
+        // Store progress elements by correlation ID for updates
+        const progressElements = new Map();
 
         function createUpdateElement(data) {
             // Clone the template
@@ -70,11 +110,13 @@
             const detailsEl = updateDiv.querySelector('[data-field="details"]');
             const eventTypeEl = updateDiv.querySelector('[data-field="event-type"]');
             const jsonEl = updateDiv.querySelector('[data-field="json"]');
+            const progressEl = updateDiv.querySelector('[data-field="progress"]');
 
             // Set content based on event type
             let headerText = "";
             let detailsText = "";
             let showJson = false;
+            let showProgress = false;
 
             switch (data.type) {
                 case 'AgentProcessPlanFormulatedEvent':
@@ -136,16 +178,25 @@
                         toolCallElements.set(data.id, updateDiv);
                     }
                     break;
-                // case 'ToolCallResponseEvent':
-                //     // Instead of creating a new element, find the corresponding request element
-                //     if (data.request?.correlationId && toolCallElements.has(data.request?.correlationId)) {
-                //         return null; // Return null to indicate no new element should be created
-                //     }
-                //     headerText = `🔧 Tool Response`;
-                //     detailsText = 'Tool response received';
-                //     showJson = true;
-                //     jsonEl.textContent = JSON.stringify(data.response, null, 2);
-                //     break;
+                case 'ProgressUpdateEvent':
+                    headerText = `📊 Progress Update`;
+                    detailsText = `${data.current} of ${data.total} completed`;
+                    showProgress = true;
+
+                    // Store for potential future updates
+                    if (data.correlationId) {
+                        updateDiv.setAttribute('data-progress-id', data.correlationId);
+                        progressElements.set(data.correlationId, updateDiv);
+                    }
+
+                    // Set up progress bar
+                    const progressBar = progressEl.querySelector('.progress-fill');
+                    const progressText = progressEl.querySelector('.progress-text');
+                    const percentage = Math.round((data.current / data.total) * 100);
+
+                    progressBar.style.width = `${percentage}%`;
+                    progressText.textContent = `${percentage}% (${data.current}/${data.total})`;
+                    break;
                 case 'LlmRequestEvent':
                     headerText = `🤖 LLM Call - ${data.llm?.name}`;
                     detailsText = data.prompt;
@@ -166,6 +217,11 @@
             headerEl.textContent = headerText;
             detailsEl.textContent = detailsText;
             // eventTypeEl.textContent = `Event: ${data.type}`;
+
+            // Show/hide progress based on event type
+            if (showProgress) {
+                progressEl.classList.remove('hidden');
+            }
 
             // Show/hide JSON based on event type
             if (showJson) {
@@ -199,6 +255,28 @@
             return true;
         }
 
+        function updateProgressElement(data) {
+            if (!data.correlationId || !progressElements.has(data.correlationId)) {
+                return false;
+            }
+
+            const progressElement = progressElements.get(data.correlationId);
+            const detailsEl = progressElement.querySelector('[data-field="details"]');
+            const progressEl = progressElement.querySelector('[data-field="progress"]');
+            const progressBar = progressEl.querySelector('.progress-fill');
+            const progressText = progressEl.querySelector('.progress-text');
+
+            // Update details text
+            detailsEl.textContent = `${data.current} of ${data.total} completed`;
+
+            // Update progress bar
+            const percentage = Math.round((data.current / data.total) * 100);
+            progressBar.style.width = `${percentage}%`;
+            progressText.textContent = `${percentage}% (${data.current}/${data.total})`;
+
+            return true;
+        }
+
         eventSource.addEventListener('agent-process-event', function (event) {
             const data = JSON.parse(event.data);
 
@@ -219,6 +297,15 @@
             // Handle tool call responses by updating existing elements
             if (data.type === 'ToolCallResponseEvent') {
                 const updated = updateToolCallElement(data);
+                if (updated) {
+                    // No need to create a new element
+                    return;
+                }
+            }
+
+            // Handle progress updates by updating existing elements
+            if (data.type === 'ProgressUpdateEvent' && data.correlationId) {
+                const updated = updateProgressElement(data);
                 if (updated) {
                     // No need to create a new element
                     return;
