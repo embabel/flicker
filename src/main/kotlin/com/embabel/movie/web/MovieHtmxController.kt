@@ -23,6 +23,7 @@ import com.embabel.agent.web.security.EmbabelAuth2User
 import com.embabel.movie.agent.MovieRequest
 import com.embabel.movie.domain.MovieBuff
 import com.embabel.movie.domain.MovieService
+import com.embabel.movie.domain.StreamingServiceRepository
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -37,6 +38,7 @@ class MovieHtmxController(
     private val agentPlatform: AgentPlatform,
     private val movieService: MovieService,
     private val countryCodesProvider: CountryCodesProvider = DefaultCountryCodesProvider,
+    private val streamingServiceRepository: StreamingServiceRepository,
 ) {
 
     private val logger = LoggerFactory.getLogger(MovieHtmxController::class.java)
@@ -193,6 +195,7 @@ class MovieHtmxController(
     ): String {
         val movieBuff = movieBuff(principal)
         model.addAttribute("countryCodes", countryCodesProvider.countryCodes())
+        model.addAttribute("streamingServices", streamingServiceRepository.findAll())
         addCommonAttributes(model, movieBuff)
         return "edit-preferences-form"
     }
@@ -206,11 +209,19 @@ class MovieHtmxController(
         @RequestParam movieLikes: String,
         @RequestParam movieDislikes: String,
         @RequestParam countryCode: String,
+        @RequestParam streamingServices: List<String>,
         @AuthenticationPrincipal principal: OAuth2User,
     ): String {
         val movieBuff = movieBuff(principal)
 
-        movieService.updatePreferences(movieBuff, about, movieLikes, movieDislikes, countryCode)
+        movieService.updatePreferences(
+            movieBuff, about, movieLikes, movieDislikes,
+            countryCode,
+            streamingServices.map { id ->
+                streamingServiceRepository.findById(id)
+                    .orElseThrow { error("Streaming service with ID $id not found") }
+            }
+        )
         logger.info("Updated preferences for user {}", movieBuff.email)
 
         // Redirect to the movie finder page

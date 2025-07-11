@@ -95,12 +95,14 @@ class MovieService(
         movieLikes: String,
         movieDislikes: String,
         countryCode: String,
+        streamingServices: List<StreamingService>,
     ) {
         val updatedMovieBuff = movieBuff.copy(
             about = about,
             movieLikes = movieLikes,
             movieDislikes = movieDislikes,
             countryCode = countryCode,
+            streamingServices = streamingServices.toMutableList(),
         )
         movieBuffRepository.save(updatedMovieBuff)
         logger.info(

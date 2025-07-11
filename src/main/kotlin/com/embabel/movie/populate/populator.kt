@@ -18,6 +18,7 @@ package com.embabel.movie.populate
 import com.embabel.common.util.RandomFromFileMessageGenerator
 import com.embabel.movie.domain.MovieBuff
 import com.embabel.movie.domain.MovieService
+import com.embabel.movie.domain.StreamingService
 import jakarta.annotation.PostConstruct
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -30,6 +31,11 @@ class StartupDataInitializer(
 
     @PostConstruct
     fun init() {
+
+        val netflix = StreamingService("Netflix", "https://www.netflix.com")
+        val stan = StreamingService("Stan", "https://www.stan.com.au")
+        val disneyPlus = StreamingService("Disney+", "https://www.disneyplus.com")
+
         val name = "Rod"
         if (movieService.findMovieBuffByName(name) == null) {
             val rod = MovieBuff(
@@ -43,7 +49,7 @@ class StartupDataInitializer(
                 He is widely traveled and has lived in California and the UK
                 before returning to Sydney.
             """.trimIndent(),
-                streamingServices = listOf("Netflix", "Stan", "Disney+"),
+                streamingServices = mutableListOf(netflix, stan, disneyPlus),
                 movieLikes = "Complex plots, film noir",
                 movieDislikes = "Predictable endings, formulaic blockbusters, anime",
             )

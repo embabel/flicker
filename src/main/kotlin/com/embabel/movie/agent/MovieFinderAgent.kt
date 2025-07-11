@@ -327,7 +327,7 @@ class MovieFinderAgent(
                             country = movieBuff.countryCode,
                         ).distinct()
                     val availableToUser = allStreamingOptions.filter {
-                        (it.service.name.lowercase() in movieBuff.streamingServices.map { it.lowercase() })  //|| it.type == "free"
+                        (it.service.name.lowercase() in movieBuff.streamingServices.map { it.id.lowercase() })  //|| it.type == "free"
                     }
                     logger.debug(
                         "Movie {} available in [{}] on {}: {} can watch it free on {}",
@@ -367,7 +367,7 @@ class MovieFinderAgent(
                             "Movie {} not available to {} on any of their streaming services and we're not yet in desperation mode {} - filtering it out",
                             movie.title,
                             movieBuff.name,
-                            movieBuff.streamingServices.sorted().joinToString(", ")
+                            movieBuff.streamingServices.sortedBy { it.name }.joinToString(", ")
                         )
                         null
                     }

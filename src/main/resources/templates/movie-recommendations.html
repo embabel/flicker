@@ -11,8 +11,9 @@
     <div th:if="${movieRecommendations != null}">
         <h2 th:text="${movieRecommendations.caption}"></h2>
 
-        <p th:utext="${movieRecommendations.writeup}"></p>
-
+        <div class="recommendation-container">
+            <p th:utext="${movieRecommendations.writeup}"></p>
+        </div>
 
         <button class="movie-button" onclick="window.location.href = '/'">
             Look for more movies

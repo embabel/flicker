@@ -6,6 +6,7 @@ import com.embabel.common.core.types.Timestamped
 import com.embabel.movie.agent.OneThroughTen
 import jakarta.persistence.*
 import org.hibernate.annotations.Immutable
+import org.springframework.data.jpa.repository.JpaRepository
 import java.time.Instant
 
 @Entity
@@ -26,7 +27,8 @@ data class MovieBuff(
     val movieLikes: String = "",
     val movieDislikes: String = "",
     val about: String = "",
-    val streamingServices: List<String> = emptyList(),
+    @OneToMany(fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
+    val streamingServices: MutableList<StreamingService> = mutableListOf(),
 ) : User {
 
     fun addRating(movieRating: MovieRating) {
@@ -74,6 +76,17 @@ data class Movie(
         title = movieInfo.title,
     )
 }
+
+@Entity
+@Immutable
+data class StreamingService(
+    @Id
+    val id: String,
+    val url: String,
+    val name: String = id,
+)
+
+interface StreamingServiceRepository : JpaRepository<StreamingService, String>
 
 /**
  * Roger Ebert style movie guide persona.

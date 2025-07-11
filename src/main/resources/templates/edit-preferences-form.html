@@ -8,7 +8,7 @@
 <section>
     <h2>Edit Movie Preferences</h2>
     <p>
-        <a href="/movie" class="movie-button">Back to Movie Finder</a>
+        <a href="/movie" class="movie-button">Find Movies</a>
     </p>
 
     <form action="/movie/preferences" method="post" th:object="${movieBuff}">
@@ -37,6 +37,20 @@
                         th:selected="${country.code == movieBuff.countryCode}">
                 </option>
             </select>
+        </div>
+
+        <div class="form-group">
+            <label>Streaming Services</label>
+            <div class="checkbox-group">
+                <div th:each="service : ${streamingServices}" class="checkbox-item">
+                    <input type="checkbox"
+                           th:id="${'service-' + service.id}"
+                           th:name="streamingServices"
+                           th:value="${service.id}"
+                           th:field="*{streamingServices}">
+                    <label th:for="${'service-' + service.id}" th:text="${service.name}"></label>
+                </div>
+            </div>
         </div>
 
         <button class="movie-button" type="submit" style="margin-top: 20px;">Save Preferences</button>
