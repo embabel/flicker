@@ -13,13 +13,30 @@
 
     <form action="/movie/preferences" method="post" th:object="${movieBuff}">
         <div class="form-group">
+            <label for="about">About me</label>
+            <textarea id="about" name="about" rows="3" cols="40" th:field="*{about}" required></textarea>
+        </div>
+        <div class="form-group">
             <label for="movieLikes">Movies I Like</label>
             <textarea id="movieLikes" name="movieLikes" rows="3" cols="40" th:field="*{movieLikes}" required></textarea>
         </div>
 
         <div class="form-group">
             <label for="movieDislikes">Movies I Dislike</label>
-            <textarea id="movieDislikes" name="movieDislikes" rows="3" cols="40" th:field="*{movieDislikes}" required></textarea>
+            <textarea id="movieDislikes" name="movieDislikes" rows="3" cols="40" th:field="*{movieDislikes}"
+                      required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="countryCode">Country</label>
+            <select id="countryCode" name="countryCode" th:field="*{countryCode}" required>
+                <option value="">Select a country</option>
+                <option th:each="country : ${countryCodes}"
+                        th:value="${country.code}"
+                        th:text="${country.name}"
+                        th:selected="${country.code == movieBuff.countryCode}">
+                </option>
+            </select>
         </div>
 
         <button class="movie-button" type="submit" style="margin-top: 20px;">Save Preferences</button>

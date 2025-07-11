@@ -1,6 +1,6 @@
 package com.embabel.movie.domain
 
-import com.embabel.agent.web.security.UserRepository
+import com.embabel.agent.identity.UserService
 import com.embabel.movie.agent.OneThroughTen
 import com.embabel.movie.service.OmdbClient
 import org.slf4j.LoggerFactory
@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * Spring Data repository for MovieBuff entities, which are mapped with JPA
  */
-interface MovieBuffRepository : JpaRepository<MovieBuff, String>, UserRepository {
+interface MovieBuffRepository : JpaRepository<MovieBuff, String> {
 
     fun findByName(name: String): MovieBuff?
 
@@ -29,13 +29,21 @@ class MovieService(
     private val movieBuffRepository: MovieBuffRepository,
     private val movieRepository: MovieRepository,
     private val omdbClient: OmdbClient,
-) {
+) : UserService<MovieBuff> {
 
     private val logger = LoggerFactory.getLogger(MovieService::class.java)
 
     @Transactional(readOnly = true)
-    fun findMovieBuffByEmail(email: String): MovieBuff? {
+    override fun findByEmail(email: String): MovieBuff? {
         return movieBuffRepository.findById(email).orElse(null)
+    }
+
+    @Transactional
+    override fun provisionUser(email: String, name: String): MovieBuff {
+        val movieBuff = MovieBuff(email = email, name = name, countryCode = "au")
+        return movieBuffRepository.save(movieBuff).also {
+            logger.info("Provisioned new movie buff: {}", it)
+        }
     }
 
     @Transactional(readOnly = true)
@@ -81,17 +89,27 @@ class MovieService(
     }
 
     @Transactional
-    fun updatePreferences(movieBuff: MovieBuff, movieLikes: String, movieDislikes: String) {
+    fun updatePreferences(
+        movieBuff: MovieBuff,
+        about: String,
+        movieLikes: String,
+        movieDislikes: String,
+        countryCode: String,
+    ) {
         val updatedMovieBuff = movieBuff.copy(
+            about = about,
             movieLikes = movieLikes,
-            movieDislikes = movieDislikes
+            movieDislikes = movieDislikes,
+            countryCode = countryCode,
         )
         movieBuffRepository.save(updatedMovieBuff)
         logger.info(
-            "Updated preferences for user: {}, likes={}. dislikes={}",
+            "Updated preferences for user: {}, about={}, likes={}. dislikes={}, countryCode={}",
             movieBuff.email,
+            updatedMovieBuff.about,
             updatedMovieBuff.movieLikes,
             updatedMovieBuff.movieDislikes,
+            updatedMovieBuff.countryCode,
         )
     }
 

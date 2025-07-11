@@ -1,7 +1,7 @@
 package com.embabel.movie.domain
 
+import com.embabel.agent.identity.User
 import com.embabel.agent.prompt.persona.Persona
-import com.embabel.agent.web.security.User
 import com.embabel.common.core.types.Timestamped
 import com.embabel.movie.agent.OneThroughTen
 import jakarta.persistence.*
@@ -22,11 +22,11 @@ data class MovieBuff(
         joinColumns = [JoinColumn(name = "movie_buff_id")],
     )
     @Column(name = "hobby")
-    val hobbies: List<String>,
-    val movieLikes: String,
-    val movieDislikes: String,
-    val about: String,
-    val streamingServices: List<String>,
+    val hobbies: List<String> = emptyList(),
+    val movieLikes: String = "",
+    val movieDislikes: String = "",
+    val about: String = "",
+    val streamingServices: List<String> = emptyList(),
 ) : User {
 
     fun addRating(movieRating: MovieRating) {

@@ -1,6 +1,7 @@
 package com.embabel.agent.web.security
 
-import com.embabel.agent.domain.library.Person
+import com.embabel.agent.identity.User
+import com.embabel.agent.identity.UserService
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService
@@ -11,7 +12,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class EmbabelOAuth2UserService(
-    private val userRepository: UserRepository,
+    private val userService: UserService<*>,
 ) : DefaultOAuth2UserService() {
 
     override fun loadUser(userRequest: OAuth2UserRequest): OAuth2User {
@@ -20,10 +21,11 @@ class EmbabelOAuth2UserService(
         // Extract email from Google OAuth2 response
         val email = user.attributes["email"] as? String
             ?: throw OAuth2AuthenticationException("Email not found in OAuth2 response")
+        val name = user.attributes["name"] as? String
+            ?: throw OAuth2AuthenticationException("Name not found in OAuth2 response")
 
         // Check if user is authorized in your database
-        val embabelUser = userRepository.findByEmail(email)
-            ?: throw OAuth2AuthenticationException("User not authorized: $email")
+        val embabelUser = userService.findByEmail(email) ?: userService.provisionUser(email, name)
 
 //        if (!authorizedUser.isActive) {
 //            throw OAuth2AuthenticationException("User account is inactive: $email")
@@ -41,14 +43,6 @@ class EmbabelOAuth2UserService(
             authorities,
         )
     }
-}
-
-interface User : Person {
-    val email: String
-}
-
-interface UserRepository {
-    fun findByEmail(email: String): User?
 }
 
 class EmbabelAuth2User(

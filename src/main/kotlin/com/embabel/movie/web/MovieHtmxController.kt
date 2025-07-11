@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.*
 class MovieHtmxController(
     private val agentPlatform: AgentPlatform,
     private val movieService: MovieService,
+    private val countryCodesProvider: CountryCodesProvider = DefaultCountryCodesProvider,
 ) {
 
     private val logger = LoggerFactory.getLogger(MovieHtmxController::class.java)
@@ -99,7 +100,7 @@ class MovieHtmxController(
     @GetMapping("/ratings")
     fun viewRatings(
         model: Model,
-        @AuthenticationPrincipal principal: OAuth2User
+        @AuthenticationPrincipal principal: OAuth2User,
     ): String {
         val movieBuff = movieBuff(principal)
         val limit = 10
@@ -169,7 +170,7 @@ class MovieHtmxController(
         logger.info("Added rating for movie '{}' with score {} by user {}", title, rating, movieBuff.email)
 
         // Return the newly added rating as HTML fragment
-        val updatedMovieBuff = movieService.findMovieBuffByEmail(movieBuff.email)
+        val updatedMovieBuff = movieService.findByEmail(movieBuff.email)
             ?: error("Could not find movie buff after adding rating")
 
         val latestRating = updatedMovieBuff.movieRatings.maxByOrNull { it.timestamp }
@@ -191,8 +192,8 @@ class MovieHtmxController(
         @AuthenticationPrincipal principal: OAuth2User
     ): String {
         val movieBuff = movieBuff(principal)
+        model.addAttribute("countryCodes", countryCodesProvider.countryCodes())
         addCommonAttributes(model, movieBuff)
-        model.addAttribute("movieBuff", movieBuff)
         return "edit-preferences-form"
     }
 
@@ -201,14 +202,15 @@ class MovieHtmxController(
      */
     @PostMapping("/preferences")
     fun updatePreferences(
+        @RequestParam about: String,
         @RequestParam movieLikes: String,
         @RequestParam movieDislikes: String,
+        @RequestParam countryCode: String,
         @AuthenticationPrincipal principal: OAuth2User,
     ): String {
         val movieBuff = movieBuff(principal)
 
-        // Update the movie buff preferences
-        movieService.updatePreferences(movieBuff, movieLikes, movieDislikes)
+        movieService.updatePreferences(movieBuff, about, movieLikes, movieDislikes, countryCode)
         logger.info("Updated preferences for user {}", movieBuff.email)
 
         // Redirect to the movie finder page
@@ -220,7 +222,7 @@ class MovieHtmxController(
             ?: error("User is not a movie buff. Please register as a movie buff to perform this action.")
 
         // Always fetch fresh data from database
-        return movieService.findMovieBuffByEmail(embabelUser.email)
+        return movieService.findByEmail(embabelUser.email)
             ?: error("MovieBuff not found in database")
     }
 
@@ -228,9 +230,58 @@ class MovieHtmxController(
         model: Model,
         movieBuff: MovieBuff,
     ) {
+        model.addAttribute("movieBuff", movieBuff)
         model.addAttribute("pageTitle", "Movie Finder")
         model.addAttribute("user", movieBuff)
         model.addAttribute("css", "/css/film_noir.css")
     }
 }
 
+
+data class CountryCode(
+    val code: String,
+    val name: String,
+)
+
+interface CountryCodesProvider {
+    fun countryCodes(): List<CountryCode>
+}
+
+object DefaultCountryCodesProvider : CountryCodesProvider {
+    private val countryCodes = listOf(
+        CountryCode("gb", "United Kingdom"),
+        CountryCode("fr", "France"),
+        CountryCode("de", "Germany"),
+        CountryCode("jp", "Japan"),
+        CountryCode("in", "India"),
+        CountryCode("br", "Brazil"),
+        CountryCode("ca", "Canada"),
+        CountryCode("au", "Australia"),
+        CountryCode("it", "Italy"),
+        CountryCode("es", "Spain"),
+        CountryCode("cn", "China"),
+        CountryCode("kr", "South Korea"),
+        CountryCode("mx", "Mexico"),
+        CountryCode("za", "South Africa"),
+        CountryCode("nl", "Netherlands"),
+        CountryCode("se", "Sweden"),
+        CountryCode("no", "Norway"),
+        CountryCode("fi", "Finland"),
+        CountryCode("dk", "Denmark"),
+        CountryCode("pl", "Poland"),
+        CountryCode("tr", "Turkey"),
+        CountryCode("ar", "Argentina"),
+        CountryCode("ch", "Switzerland"),
+        CountryCode("be", "Belgium"),
+        CountryCode("at", "Austria"),
+        CountryCode("gr", "Greece"),
+        CountryCode("pt", "Portugal"),
+        CountryCode("hu", "Hungary"),
+        CountryCode("cz", "Czech Republic"),
+        CountryCode("ro", "Romania"),
+        CountryCode("nz", "New Zealand"),
+        CountryCode("us", "United States"),
+    ).distinct().sortedBy { it.name }
+
+    override fun countryCodes(): List<CountryCode> = countryCodes
+}

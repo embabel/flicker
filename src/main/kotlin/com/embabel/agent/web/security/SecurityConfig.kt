@@ -11,6 +11,7 @@ import org.springframework.security.web.SecurityFilterChain
 @ConfigurationProperties(prefix = "embabel.security")
 data class SecurityProperties(
     val enabled: Boolean = true,
+    val defaultSuccessUrl: String = "/",
 )
 
 @Configuration
@@ -43,7 +44,7 @@ class SecurityConfig(
             .oauth2Login { oauth2 ->
                 oauth2
                     .loginPage("/login")
-                    .defaultSuccessUrl("/", true)
+                    .defaultSuccessUrl(securityProperties.defaultSuccessUrl, true)
                     .userInfoEndpoint { userInfo ->
                         userInfo.userService(embabelOAuth2UserService)
                     }
