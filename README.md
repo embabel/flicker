@@ -33,6 +33,8 @@ An intelligent movie recommendation agent that analyzes taste profiles and sugge
 
 ## API keys you'll need
 
+Besides your LLM keys such as as `OPENAI_API_KEY`, you will need to set the following environment variables:
+
 - `export OMDB_API_KEY=<your_omdb_key>`
 - `export X_RAPIDAPI_KEY=<your_rapidapi_key>`
 
@@ -73,14 +75,10 @@ First, start the PostgresSQL database using Docker with:
 docker compose up
 ```
 
-Now you can start the agent under Spring Shell using the shell script `./shell.sh` or run `FlickerApplication` in your
-IDE.
+Start the application under your IDE or by navigating to the `scripts` directory and typing `./run.sh`.
 
-Example command:
-
-```bash
-x "Suggest movies for Rod tonight. He'd like to see a film set in mountains"
-```
+You will find the app at http://localhost:2001. Thanks to
+Stanley Kubrick.
 
 The logging will channel [Severance](https://www.imdb.com/title/tt11280740/).
 
