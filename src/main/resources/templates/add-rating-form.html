@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html>
 <body>
 <div class="rating-form-container">
     <h3>Rate a Movie</h3>
-    <form hx-post="/movie/ratings/add" 
-          hx-target="#ratings-container" 
-          hx-swap="afterbegin" 
+    <form hx-post="/movie/ratings/add"
+          hx-target="#ratings-container"
+          hx-swap="afterbegin"
           hx-on::after-request="this.reset(); document.getElementById('rating-form-container').innerHTML = '';">
         <div class="form-group">
             <label for="title">Movie Title</label>
@@ -28,8 +28,8 @@
             </select>
         </div>
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Submit Rating</button>
-            <button type="button" class="btn btn-secondary" 
+            <button type="submit" class="movie-button">Submit Rating</button>
+            <button type="button" class="btn btn-secondary"
                     onclick="document.getElementById('rating-form-container').innerHTML = '';">
                 Cancel
             </button>

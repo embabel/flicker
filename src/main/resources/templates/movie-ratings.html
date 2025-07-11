@@ -9,7 +9,7 @@
 <body>
 <section>
     <div class="container">
-        <h1>My Movie Ratings</h1>
+        <h2 th:text="${user.name} + '\'s Movie Ratings'">My Movie Ratings</h2>
         <p>
             <!-- Replace whole page -->
             <button class="movie-button" hx-get="/" hx-target="body" hx-swap="outerHTML">

@@ -61,7 +61,9 @@ body {
 
 .movie-button:visited {
     color: #ffffff;
-}/* Movie Ratings Styles */
+}
+
+/* Movie Ratings Styles */
 .rating-item {
     margin-bottom: 1.5rem;
 }

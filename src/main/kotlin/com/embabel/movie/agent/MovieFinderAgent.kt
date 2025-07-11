@@ -467,7 +467,8 @@ class MovieFinderAgent(
                 Their movie taste profile is ${dmb.tasteProfile}
                 A bit about them: "${dmb.movieBuff.about}"
                 
-                Include a CONCISE caption for the writeup. It should not include the movie buff's name.
+                Include a CONCISE caption for the writeup. 
+                It should not include the movie buff's name and be no more than 5 words.
 
                 The streamable movie recommendations are:
                 ${

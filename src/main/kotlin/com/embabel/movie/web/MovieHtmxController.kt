@@ -45,12 +45,12 @@ class MovieHtmxController(
         model: Model,
         @AuthenticationPrincipal principal: OAuth2User,
     ): String {
-        model.addAttribute("user", movieBuff(principal))
         model.addAttribute(
             "movieRequest", MovieRequest(
                 preference = "A film with a remarkable musical score",
             )
         )
+        addCommonAttributes(model, movieBuff(principal))
         return "find-movies-form"
     }
 
@@ -64,7 +64,6 @@ class MovieHtmxController(
         val movieBuff = movieBuff(principal)
         logger.info("Finding movies for user {} named {}", movieBuff.email, movieBuff.name)
 
-        // Convert form to domain objects
         val agent = agentPlatform.agents().singleOrNull { it.name.lowercase().contains("movie") }
             ?: error("No  movie agent found. Please ensure the movie agent is registered.")
 
@@ -81,7 +80,7 @@ class MovieHtmxController(
         )
 
         model.addAttribute("movieRequest", movieRequest)
-        model.addAttribute("user", movieBuff)
+        addCommonAttributes(model, movieBuff)
         GenericProcessingValues(
             agentProcess = agentProcess,
             pageTitle = "Finding Movies",
@@ -105,7 +104,7 @@ class MovieHtmxController(
         val limit = 10
         val ratings = movieService.getUserRatings(movieBuff, 0, limit)
 
-        model.addAttribute("movieBuff", movieBuff)
+        addCommonAttributes(model, movieBuff)
         model.addAttribute("ratings", ratings)
         model.addAttribute("offset", ratings.size)
         model.addAttribute("limit", limit)
@@ -187,6 +186,15 @@ class MovieHtmxController(
     ): MovieBuff {
         return (principal as? EmbabelAuth2User)?.getUser() as? MovieBuff
             ?: error("User is not a movie buff. Please register as a movie buff to perform this action.")
+    }
+
+    private fun addCommonAttributes(
+        model: Model,
+        movieBuff: MovieBuff,
+    ) {
+        model.addAttribute("pageTitle", "Movie Finder")
+        model.addAttribute("user", movieBuff)
+        model.addAttribute("css", "/css/film_noir.css")
     }
 }
 
