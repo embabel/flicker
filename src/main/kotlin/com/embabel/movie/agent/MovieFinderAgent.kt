@@ -22,6 +22,7 @@ import com.embabel.agent.api.common.createObject
 import com.embabel.agent.config.models.OpenAiModels
 import com.embabel.agent.core.CoreToolGroups
 import com.embabel.agent.core.all
+import com.embabel.agent.core.last
 import com.embabel.agent.domain.library.HasContent
 import com.embabel.agent.domain.library.RelevantNewsStories
 import com.embabel.agent.event.ProgressUpdateEvent
@@ -61,8 +62,18 @@ data class SuggestedMovies(
     val movies: List<MovieResponse>,
 )
 
+/**
+ * Movies that are available to stream
+ */
 data class StreamableMovies(
     val movies: List<StreamableMovie>,
+)
+
+/**
+ * Movies the user can stream in their country, but not on their preferred streaming services.
+ */
+data class Fallbacks(
+    val movies: MutableList<StreamableMovie> = mutableListOf(),
 )
 
 /**
@@ -84,6 +95,7 @@ data class StreamableMovieWithTrailer(
 data class StreamableMoviesWithTrailers(
     val movies: List<StreamableMovieWithTrailer>,
 )
+
 
 /**
  * Structured recommendations
@@ -118,7 +130,7 @@ data class MovieFinderConfig(
     val writerPersona: Persona = Roger,
     val model: String = OpenAiModels.GPT_41_MINI,
     val confirmMovieBuff: Boolean = true,
-    val bailAfterFailedSuggestions: Int = 30,
+    val bailAfterSuggestions: Int = 40,
 ) {
 
     val llm = LlmOptions(
@@ -240,6 +252,23 @@ class MovieFinderAgent(
         relevantNewsStories: RelevantNewsStories,
         context: OperationContext,
     ): StreamableMovies {
+        val fallbacks = context.last<Fallbacks>() ?: run {
+            val fb = Fallbacks()
+            context += fb
+            fb
+        }
+        // TODO what if there aren't enough fallbacks
+        if (areWeDesperate(context)) {
+            logger.info(
+                "Desperate for movie suggestions, returning {} fallbacks: {}",
+                fallbacks.movies.size,
+                fallbacks.movies.joinToString(", ") { it.movie.title }
+            )
+            return StreamableMovies(
+                movies = fallbacks.movies,
+            )
+        }
+
         val suggestedMovieTitles = context.promptRunner(
             config.llm.withTemperature(1.3),
             promptContributors = listOf(config.suggesterPersona),
@@ -276,21 +305,15 @@ class MovieFinderAgent(
         return streamableMovies(
             movieBuff = dmb.movieBuff,
             suggestedMovies = suggestedMovies,
-            desperationMode = excludedTitles(context).size >= config.bailAfterFailedSuggestions,
+            fallbacks = fallbacks,
         )
     }
 
-    /**
-     * Helper method that looks up detailed movie information from OMDB API.
-     *
-     * This method demonstrates:
-     * - External API integration
-     * - Error handling for external service calls
-     * - Data transformation (titles → detailed movie objects)
-     *
-     * @param suggestedMovieTitles The movie titles to look up
-     * @return SuggestedMovies containing detailed movie information
-     */
+    private fun areWeDesperate(context: OperationContext): Boolean {
+        val suggestions = context.all<SuggestedMovieTitles>().flatMap { it.titles }.size
+        return suggestions >= config.bailAfterSuggestions
+    }
+
     private fun lookUpMovies(suggestedMovieTitles: SuggestedMovieTitles): SuggestedMovies {
         logger.info(
             "Looking up streaming status of suggested movies {}",
@@ -302,27 +325,11 @@ class MovieFinderAgent(
         return SuggestedMovies(movies)
     }
 
-    /**
-     * Filters movies based on streaming availability for the user.
-     *
-     * This method demonstrates:
-     * - Complex filtering logic
-     * - Integration with multiple external services
-     * - Personalization based on user preferences (streaming services)
-     * - Detailed logging for debugging and transparency
-     *
-     * @param movieBuff The MovieBuff with streaming service preferences
-     * @param suggestedMovies The suggested movies to filter
-     * @return StreamableMovies containing only movies available on the user's services
-     */
     private fun streamableMovies(
         movieBuff: MovieBuff,
         suggestedMovies: SuggestedMovies,
-        desperationMode: Boolean,
+        fallbacks: Fallbacks,
     ): StreamableMovies {
-        if (desperationMode) {
-            logger.info("$$$$ In desperation mode - dispensing with free streaming availability check")
-        }
         val streamableMovieList = suggestedMovies.movies
             // Sometimes the LLM ignores being told not to
             // include movies the user has seen
@@ -355,31 +362,26 @@ class MovieFinderAgent(
                             movieBuff.countryCode,
                         )
                         null
-                    } else if (availableToUser.isNotEmpty()) {
-                        StreamableMovie(
-                            movie = movie,
-                            allStreamingOptions = allStreamingOptions,
-                            availableStreamingOptions = availableToUser,
-                        )
-                    } else if (desperationMode) {
-                        logger.info(
-                            "Movie {} not available to {} on any of their streaming services but we're in desperation mode",
-                            movie.title,
-                            movieBuff.name,
-                        )
-                        StreamableMovie(
-                            movie = movie,
-                            allStreamingOptions = allStreamingOptions,
-                            availableStreamingOptions = availableToUser,
-                        )
                     } else {
-                        logger.info(
-                            "Movie {} not available to {} on any of their streaming services and we're not yet in desperation mode {} - filtering it out",
-                            movie.title,
-                            movieBuff.name,
-                            movieBuff.streamingServices.sortedBy { it.name }.joinToString(", ")
-                        )
-                        null
+                        val streamableMovie =
+                            StreamableMovie(
+                                movie = movie,
+                                allStreamingOptions = allStreamingOptions,
+                                availableStreamingOptions = availableToUser,
+                            )
+                        if (availableToUser.isNotEmpty()) {
+                            streamableMovie
+                        } else {
+                            // Available to the user, but not on their preferred streaming services
+                            fallbacks.movies.add(streamableMovie)
+                            logger.info(
+                                "Movie {} not available to {} on any of their streaming services and we're not yet in desperation mode {} - filtering it out",
+                                movie.title,
+                                movieBuff.name,
+                                movieBuff.streamingServices.sortedBy { it.name }.joinToString(", ")
+                            )
+                            null
+                        }
                     }
                 } catch (_: Exception) {
                     null
@@ -436,11 +438,13 @@ class MovieFinderAgent(
      */
     private fun excludedTitles(
         context: OperationContext,
-    ): List<String> = context
-        .all<SuggestedMovieTitles>()
-        .flatMap { it.titles } + allStreamableMovies(context).map { it.movie.title }
-        .distinct()
-        .sorted()
+    ): List<String> {
+        return context
+            .all<SuggestedMovieTitles>()
+            .flatMap { it.titles } + allStreamableMovies(context).map { it.movie.title }
+            .distinct()
+            .sorted()
+    }
 
     @Action(pre = [HAVE_ENOUGH_MOVIES])
     fun findTrailers(context: OperationContext): StreamableMoviesWithTrailers {
