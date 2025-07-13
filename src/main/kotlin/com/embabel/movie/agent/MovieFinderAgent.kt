@@ -15,7 +15,10 @@
  */
 package com.embabel.movie.agent
 
-import com.embabel.agent.api.annotation.*
+import com.embabel.agent.api.annotation.AchievesGoal
+import com.embabel.agent.api.annotation.Action
+import com.embabel.agent.api.annotation.Agent
+import com.embabel.agent.api.annotation.Condition
 import com.embabel.agent.api.common.OperationContext
 import com.embabel.agent.api.common.create
 import com.embabel.agent.api.common.createObject
@@ -24,7 +27,6 @@ import com.embabel.agent.core.CoreToolGroups
 import com.embabel.agent.core.all
 import com.embabel.agent.core.last
 import com.embabel.agent.domain.library.HasContent
-import com.embabel.agent.domain.library.RelevantNewsStories
 import com.embabel.agent.event.ProgressUpdateEvent
 import com.embabel.agent.prompt.persona.Persona
 import com.embabel.common.ai.model.LlmOptions
@@ -205,29 +207,6 @@ class MovieFinderAgent(
         )
     }
 
-    @Action(toolGroups = [CoreToolGroups.WEB])
-    fun findNewsStories(
-        dmb: DecoratedMovieBuff,
-        movieRequest: MovieRequest
-    ): RelevantNewsStories =
-        using(config.llm).createObject(
-            """
-            ${dmb.movieBuff.name} is a movie buff.
-            Their hobbies are ${dmb.movieBuff.hobbies.joinToString(", ")}
-            Their movie taste profile is ${dmb.tasteProfile}
-            About them: "${dmb.movieBuff.about}"
-
-            Consider the following specific request that may govern today's choice: '${movieRequest.preference}'
-
-            Given this, use web tools and generate search queries
-            to find 5 relevant news stories that might inspire
-            a movie choice for them tonight.
-            Don't look for movie news but general news that might interest them.
-            If possible, look for news specific to the specific request.
-            Country: ${dmb.movieBuff.countryCode}
-            """.trimIndent()
-        )
-
     /**
      * Core action that suggests movies based on user preferences and current context.
      *
@@ -249,7 +228,6 @@ class MovieFinderAgent(
     fun suggestMovies(
         movieRequest: MovieRequest,
         dmb: DecoratedMovieBuff,
-        relevantNewsStories: RelevantNewsStories,
         context: OperationContext,
     ): StreamableMovies {
         val fallbacks = context.last<Fallbacks>() ?: run {
@@ -274,10 +252,11 @@ class MovieFinderAgent(
             promptContributors = listOf(config.suggesterPersona),
         ).createObject<SuggestedMovieTitles>(
             """
-            Suggest ${config.suggestionCount} movie titles that ${dmb.movieBuff.name} hasn't seen, but may find interesting.
-
-            Consider the specific request: "${movieRequest.preference}"
-
+                Your job is to find movies for ${dmb.movieBuff.name} that match their taste profile 
+                and satisfy this search criteria they've provided:
+                 <search-criteria>${movieRequest.preference}</search-criteria>
+                
+            Suggest ${config.suggestionCount} movie titles that ${dmb.movieBuff.name} hasn't seen, but will find interesting.      
             Use the information about their preferences from below:
             Their movie taste: "${dmb.tasteProfile}"
 
@@ -292,14 +271,11 @@ class MovieFinderAgent(
                         "${it.movie.title}: ${it.rating}"
                     }
             }
-            Don't include these movies we've already suggested:
+            Don't include these movies you've already suggested:
             ${excludedTitles(context).joinToString("\n")}
-
-            Consider also the following news stories for topical inspiration:
-            ${relevantNewsStories.contribution()}
             """.trimIndent(),
         )
-        // Be sure to bind the suggested movie titles to the blackboard
+        // Bind the suggested movie titles to the blackboard
         context += suggestedMovieTitles
         val suggestedMovies = lookUpMovies(suggestedMovieTitles)
         return streamableMovies(
