@@ -10,3 +10,29 @@ services:
       - POSTGRES_PASSWORD=${MF_PGPASSWORD:-look_to_the_stars}
       - POSTGRES_USER=${MF_PGUSER:-flicker}
       - POSTGRES_DB=flicker
+
+
+  mcp-gateway:
+    image: docker/agents_gateway:v2
+    ports:
+      - 9011:9011
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/run/host-services/backend.sock:/run/host-services/backend.sock"
+    command:
+      - --verbose
+      - --transport=sse
+      - --secrets=/run/secrets/mcp_secret
+      - --servers=brave,wikipedia-mcp,puppeteer,github,openbnb-airbnb,google-maps
+      - --tools=openbnb-airbnb:*
+      - --tools=brave_web_search
+      - --tools=wikipedia-mcp:*
+      - --tools=puppeteer:*
+      - --tools=google-maps:*
+      - --port=9011
+    secrets:
+      - mcp_secret
+
+secrets:
+  mcp_secret:
+    file: ./.mcp.env
