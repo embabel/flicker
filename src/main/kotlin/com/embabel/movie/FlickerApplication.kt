@@ -24,7 +24,6 @@ import org.springframework.boot.runApplication
 
 @SpringBootApplication
 @ConfigurationPropertiesScan
-//@EnableAgentShell
 @EnableAgents(
     loggingTheme = LoggingThemes.SEVERANCE,
     mcpServers = [McpServers.DOCKER, McpServers.DOCKER_DESKTOP],
