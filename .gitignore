@@ -10,7 +10,7 @@ embabel-agent-api/src/main/resources/mcp/**
 
 **/*.log
 
-.idea/**
+.idea
 
 .mcp.env
 

@@ -20,19 +20,23 @@ import com.embabel.movie.domain.MovieBuff
 import com.embabel.movie.domain.MovieService
 import com.embabel.movie.domain.StreamingService
 import com.embabel.movie.domain.StreamingServiceRepository
-import jakarta.annotation.PostConstruct
-import org.springframework.stereotype.Service
+import org.springframework.boot.ApplicationArguments
+import org.springframework.boot.ApplicationRunner
+import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
-@Service
-@Transactional
+@Component
 class StartupDataInitializer(
     private val movieService: MovieService,
     private val streamingServiceRepository: StreamingServiceRepository,
-) {
+) : ApplicationRunner {
 
-    @PostConstruct
-    fun init() {
+    @Transactional
+    override fun run(args: ApplicationArguments?) {
+        // Skip if data already exists
+        if (streamingServiceRepository.count() > 0) {
+            return
+        }
 
         val netflix = StreamingService("Netflix", "https://www.netflix.com")
         streamingServiceRepository.save(netflix)

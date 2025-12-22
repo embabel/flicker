@@ -39,6 +39,7 @@ data class MovieBuff(
 
     override val id = email
 
+    @get:Transient
     val name get() = displayName
 
     fun addRating(movieRating: MovieRating) {

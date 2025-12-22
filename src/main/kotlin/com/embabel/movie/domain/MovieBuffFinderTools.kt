@@ -8,7 +8,7 @@ class MovieBuffFinderTools(private val movieBuffRepository: MovieBuffRepository)
 
     @Tool(description = "Search for a MovieBuff by name")
     fun searchByName(name: String): String {
-        val found = movieBuffRepository.findByName(name)
+        val found = movieBuffRepository.findByDisplayName(name)
         if (found == null) return "No entity found with name '$name'"
         return "SUCCESS looking for name '$name': found entity with email: ${found.email}"
     }

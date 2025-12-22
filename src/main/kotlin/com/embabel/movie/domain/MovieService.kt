@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional
  */
 interface MovieBuffRepository : JpaRepository<MovieBuff, String> {
 
-    fun findByName(name: String): MovieBuff?
+    fun findByDisplayName(displayName: String): MovieBuff?
 
 }
 
@@ -70,7 +70,7 @@ class MovieService(
 
     @Transactional(readOnly = true)
     fun findMovieBuffByName(name: String): MovieBuff? =
-        movieBuffRepository.findByName(name)
+        movieBuffRepository.findByDisplayName(name)
 
 
     @Transactional

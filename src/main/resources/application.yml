@@ -1,0 +1,82 @@
+server:
+  port: 2001
+
+spring:
+  profiles:
+    active: docker,docker-desktop
+
+  devtools:
+    livereload:
+      enabled: true
+    restart:
+      enabled: false
+      additional-paths: src/main/resources/templates
+
+  # Template reloading without server restart
+  thymeleaf:
+    prefix: file:src/main/resources/templates/
+    suffix: .html
+    cache: false
+    check-template: true
+    check-template-location: true
+
+  # Google OAuth2 Configuration
+  # To set up Google OAuth2:
+  # 1. Go to https://console.cloud.google.com/
+  # 2. Create a new project or select an existing one
+  # 3. Navigate to APIs & Services > Credentials
+  # 4. Create an OAuth client ID (Web application type)
+  # 5. Add authorized redirect URIs: http://localhost:2001/login/oauth2/code/google
+  # 6. Copy the client ID and client secret below
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: email,profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+
+  # Static resource reloading
+  web:
+    resources:
+      cache:
+        period: 0
+      chain:
+        cache: false
+
+  datasource:
+    url: ${MF_PGURL:jdbc:postgresql://localhost:5432/flicker}
+    driver-class-name: org.postgresql.Driver
+    username: ${MF_PGUSER:flicker}
+    password: ${MF_PGPASSWORD:look_to_the_stars}
+
+  jpa:
+    show-sql: false
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      jakarta:
+        persistence:
+          schema-generation:
+            create-source: metadata
+            scripts:
+              action: create
+              create-target: src/main/resources/schema.sql
+      hibernate:
+        default_schema: flicker
+        hbm2ddl:
+          create_namespaces: true
+        format_sql: true
+        use_sql_comments: true
+
+embabel:
+  security:
+    enabled: true
+    default-success-url: /movie/preferences
+
+logging:
+  level:
+    org.springframework.web.client.RestClient: DEBUG
