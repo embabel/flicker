@@ -82,7 +82,7 @@ class MovieService(
     fun rate(movieBuff: MovieBuff, title: String, rating: OneThroughTen) {
         val movie = omdbClient.getMovieByTitle(title)
         if (movie == null) {
-            logger.info("Movie not found for title{}", title)
+            logger.info("Movie not found for title {}", title)
             return
         }
         rate(movieBuff, movie, rating)

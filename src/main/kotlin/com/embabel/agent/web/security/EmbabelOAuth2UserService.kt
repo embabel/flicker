@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class EmbabelOAuth2UserService(
-    private val userService: UserService<User>,
+    private val userService: UserService<*>,
 ) : DefaultOAuth2UserService() {
 
     override fun loadUser(userRequest: OAuth2UserRequest): OAuth2User {

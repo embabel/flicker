@@ -58,13 +58,6 @@ spring:
     hibernate:
       ddl-auto: update
     properties:
-      jakarta:
-        persistence:
-          schema-generation:
-            create-source: metadata
-            scripts:
-              action: create
-              create-target: src/main/resources/schema.sql
       hibernate:
         default_schema: flicker
         hbm2ddl:

@@ -16,58 +16,71 @@
 package com.embabel.movie.populate
 
 import com.embabel.common.util.RandomFromFileMessageGenerator
-import com.embabel.movie.domain.MovieBuff
-import com.embabel.movie.domain.MovieService
-import com.embabel.movie.domain.StreamingService
-import com.embabel.movie.domain.StreamingServiceRepository
+import com.embabel.movie.domain.*
+import org.slf4j.LoggerFactory
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
-@Component
-class StartupDataInitializer(
+@Service
+class DataPopulatorService(
     private val movieService: MovieService,
+    private val movieBuffRepository: MovieBuffRepository,
     private val streamingServiceRepository: StreamingServiceRepository,
-) : ApplicationRunner {
+) {
+    private val logger = LoggerFactory.getLogger(DataPopulatorService::class.java)
 
     @Transactional
-    override fun run(args: ApplicationArguments?) {
-        // Skip if data already exists
-        if (streamingServiceRepository.count() > 0) {
-            return
-        }
-
-        val netflix = StreamingService("Netflix", "https://www.netflix.com")
-        streamingServiceRepository.save(netflix)
-        val stan = StreamingService("Stan", "https://www.stan.com.au")
-        streamingServiceRepository.save(stan)
-        val disneyPlus = StreamingService("Disney+", "https://www.disneyplus.com")
-        streamingServiceRepository.save(disneyPlus)
-
-        val name = "Rod"
-        if (movieService.findMovieBuffByName(name) == null) {
-            val rod = MovieBuff(
-                username = "Rod",
-                displayName = "Rod Johnson",
-                email = "johnsonroda@gmail.com",
-                hobbies = listOf("Travel", "Skiing", "Chess", "Hiking", "Reading"),
-                countryCode = "au",
-                about = """
-                Rod is an Australian man who has a PhD in Musicology and
-                has a career as a software engineer, author and tech entrepreneur.
-                He is widely traveled and has lived in California and the UK
-                before returning to Sydney.
-            """.trimIndent(),
-                streamingServices = mutableListOf(netflix, stan, disneyPlus),
-                movieLikes = "Complex plots, film noir",
-                movieDislikes = "Predictable endings, formulaic blockbusters, anime",
+    fun populate() {
+        try {
+            logger.info(
+                "{} streaming services, {} movie buffs found in database.",
+                streamingServiceRepository.count(),
+                movieBuffRepository.count(),
             )
-            loadRatings(rod, "movie/rod_ratings.tsv")
-            movieService.save(rod)
+            // Skip if data already exists
+            if (streamingServiceRepository.count() > 0 || movieBuffRepository.count() > 0) {
+                return
+            }
+
+            logger.info("Populating initial data...")
+
+            val netflix = StreamingService("Netflix", "https://www.netflix.com")
+            streamingServiceRepository.save(netflix)
+            val stan = StreamingService("Stan", "https://www.stan.com.au")
+            streamingServiceRepository.save(stan)
+            val disneyPlus = StreamingService("Disney+", "https://www.disneyplus.com")
+            streamingServiceRepository.save(disneyPlus)
+
+            val name = "Rod"
+            if (movieService.findMovieBuffByName(name) == null) {
+                val rod = MovieBuff(
+                    username = "Rod",
+                    displayName = "Rod Johnson",
+                    email = "johnsonroda@gmail.com",
+                    hobbies = listOf("Travel", "Skiing", "Chess", "Hiking", "Reading"),
+                    countryCode = "au",
+                    about = """
+                    Rod is an Australian man who has a PhD in Musicology and
+                    has a career as a software engineer, author and tech entrepreneur.
+                    He is widely traveled and has lived in California and the UK
+                    before returning to Sydney.
+                """.trimIndent(),
+                    streamingServices = mutableListOf(netflix, stan, disneyPlus),
+                    movieLikes = "Complex plots, film noir",
+                    movieDislikes = "Predictable endings, formulaic blockbusters, anime",
+                )
+                loadRatings(rod, "movie/rod_ratings.tsv")
+                movieService.save(rod)
+            }
+            logger.info("Data population completed successfully")
+        } catch (e: Exception) {
+            logger.error("Data population failed - transaction will rollback", e)
+            throw e
         }
     }
-
 
     fun loadRatings(movieBuff: MovieBuff, tsv: String) {
         addRatings(
@@ -76,7 +89,6 @@ class StartupDataInitializer(
                 .messages,
         )
     }
-
 
     fun addRatings(
         movieBuff: MovieBuff,
@@ -90,7 +102,21 @@ class StartupDataInitializer(
                 // Last element is the rating, everything else is the title
                 val rating = parts.last().toInt()
                 val title = parts.dropLast(1).joinToString(" ")
-                movieService.rate(movieBuff, title, rating)
+                try {
+                    movieService.rate(movieBuff, title, rating)
+                } catch (e: Exception) {
+                    logger.warn("Failed to rate movie '{}' with rating {}: {}", title, rating, e.message)
+                }
             }
+    }
+}
+
+@Component
+class StartupDataInitializer(
+    private val dataPopulatorService: DataPopulatorService,
+) : ApplicationRunner {
+
+    override fun run(args: ApplicationArguments?) {
+        dataPopulatorService.populate()
     }
 }

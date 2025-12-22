@@ -26,7 +26,7 @@ import org.springframework.boot.runApplication
 @ConfigurationPropertiesScan
 @EnableAgents(
     loggingTheme = LoggingThemes.SEVERANCE,
-    mcpServers = [McpServers.DOCKER, McpServers.DOCKER_DESKTOP],
+    mcpServers = [McpServers.DOCKER],
 )
 class FlickerApplication
 
