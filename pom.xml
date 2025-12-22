@@ -59,6 +59,18 @@
 
         <dependency>
             <groupId>com.embabel.agent</groupId>
+            <artifactId>embabel-agent-starter-shell</artifactId>
+            <version>${embabel-agent.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.javelit</groupId>
+            <artifactId>javelit</artifactId>
+            <version>0.76.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.embabel.agent</groupId>
             <artifactId>embabel-agent-test</artifactId>
             <version>${embabel-agent.version}</version>
             <scope>test</scope>

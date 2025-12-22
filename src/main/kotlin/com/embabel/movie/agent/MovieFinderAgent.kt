@@ -24,7 +24,6 @@ import com.embabel.agent.api.common.create
 import com.embabel.agent.api.common.createObject
 import com.embabel.agent.api.event.ProgressUpdateEvent
 import com.embabel.agent.api.models.OpenAiModels
-import com.embabel.agent.core.CoreToolGroups
 import com.embabel.agent.core.last
 import com.embabel.agent.core.objectsOfType
 import com.embabel.agent.domain.library.HasContent
@@ -32,9 +31,9 @@ import com.embabel.agent.prompt.persona.Persona
 import com.embabel.common.ai.model.LlmOptions
 import com.embabel.common.ai.model.ModelSelectionCriteria.Companion.byName
 import com.embabel.movie.domain.MovieBuff
+import com.embabel.movie.service.MovieLookup
 import com.embabel.movie.service.MovieResponse
-import com.embabel.movie.service.OmdbClient
-import com.embabel.movie.service.StreamingAvailabilityClient
+import com.embabel.movie.service.StreamableMovie
 import com.embabel.movie.service.StreamingOption
 import com.fasterxml.jackson.annotation.JsonPropertyDescription
 import org.slf4j.LoggerFactory
@@ -58,13 +57,6 @@ data class SuggestedMovieTitles(
 )
 
 /**
- * Fleshed out with IMDB data
- */
-data class SuggestedMovies(
-    val movies: List<MovieResponse>,
-)
-
-/**
  * Movies that are available to stream
  */
 data class StreamableMovies(
@@ -76,15 +68,6 @@ data class StreamableMovies(
  */
 data class Fallbacks(
     val movies: MutableList<StreamableMovie> = mutableListOf(),
-)
-
-/**
- * A movie that's available to our movie buff
- */
-data class StreamableMovie(
-    val movie: MovieResponse,
-    val availableStreamingOptions: List<StreamingOption>,
-    val allStreamingOptions: List<StreamingOption>,
 )
 
 data class StreamableMovieWithTrailer(
@@ -163,8 +146,7 @@ data class MovieFinderConfig(
     description = "Find movies a person hasn't seen and may find interesting"
 )
 class MovieFinderAgent(
-    private val omdbClient: OmdbClient,
-    private val streamingAvailabilityClient: StreamingAvailabilityClient,
+    private val movieLookup: MovieLookup,
     private val config: MovieFinderConfig,
 ) {
 
@@ -277,93 +259,32 @@ class MovieFinderAgent(
         )
         // Bind the suggested movie titles to the blackboard
         context += suggestedMovieTitles
-        val suggestedMovies = lookUpMovies(suggestedMovieTitles)
-        return streamableMovies(
-            movieBuff = dmb.movieBuff,
-            suggestedMovies = suggestedMovies,
-            fallbacks = fallbacks,
-        )
+        val movies = movieLookup.lookUpMovies(suggestedMovieTitles.titles)
+        val unseenMovies = movieLookup.filterAlreadySeen(movies, dmb.movieBuff)
+
+        val streamableMovieList = unseenMovies.mapNotNull { movie ->
+            val streamable = movieLookup.canStream(dmb.movieBuff, movie)
+            when {
+                streamable == null -> null
+                streamable.availableStreamingOptions.isNotEmpty() -> streamable
+                else -> {
+                    fallbacks.movies.add(streamable)
+                    logger.info(
+                        "Movie {} not available on {}'s streaming services {} - added to fallbacks",
+                        movie.title,
+                        dmb.movieBuff.name,
+                        dmb.movieBuff.streamingServices.sortedBy { it.name }.joinToString(", ")
+                    )
+                    null
+                }
+            }
+        }
+        return StreamableMovies(streamableMovieList)
     }
 
     private fun areWeDesperate(context: OperationContext): Boolean {
         val suggestions = context.objectsOfType<SuggestedMovieTitles>().flatMap { it.titles }.size
         return suggestions >= config.bailAfterSuggestions
-    }
-
-    private fun lookUpMovies(suggestedMovieTitles: SuggestedMovieTitles): SuggestedMovies {
-        logger.info(
-            "Looking up streaming status of suggested movies {}",
-            suggestedMovieTitles.titles.joinToString(", ")
-        )
-        val movies = suggestedMovieTitles.titles.mapNotNull { title ->
-            omdbClient.getMovieByTitle(title)
-        }
-        return SuggestedMovies(movies)
-    }
-
-    private fun streamableMovies(
-        movieBuff: MovieBuff,
-        suggestedMovies: SuggestedMovies,
-        fallbacks: Fallbacks,
-    ): StreamableMovies {
-        val streamableMovieList = suggestedMovies.movies
-            // Sometimes the LLM ignores being told not to
-            // include movies the user has seen
-            .filterNot { movie ->
-                movie.imdbId in movieBuff.movieRatings.map { it.movie.imdbId }
-            }
-            .mapNotNull { movie ->
-                try {
-                    val allStreamingOptions =
-                        streamingAvailabilityClient.getShowStreamingIn(
-                            imdb = movie.imdbId,
-                            country = movieBuff.countryCode,
-                        ).distinct()
-                    val availableToUser = allStreamingOptions.filter {
-                        (it.service.name.lowercase() in movieBuff.streamingServices.map { it.id.lowercase() })  //|| it.type == "free"
-                    }
-                    logger.debug(
-                        "Movie {} available in [{}] on {}: {} can watch it free on {}",
-                        movie.title,
-                        movieBuff.countryCode,
-                        allStreamingOptions.map { it.service.name }.sorted().joinToString(", "),
-                        movieBuff.name,
-                        availableToUser.map { "${it.service.name} at ${it.link}" }.sorted().joinToString(", ")
-                    )
-                    if (allStreamingOptions.isEmpty()) {
-                        logger.info(
-                            "Movie {} not available to {} in their country {} - filtering it out",
-                            movie.title,
-                            movieBuff.name,
-                            movieBuff.countryCode,
-                        )
-                        null
-                    } else {
-                        val streamableMovie =
-                            StreamableMovie(
-                                movie = movie,
-                                allStreamingOptions = allStreamingOptions,
-                                availableStreamingOptions = availableToUser,
-                            )
-                        if (availableToUser.isNotEmpty()) {
-                            streamableMovie
-                        } else {
-                            // Available to the user, but not on their preferred streaming services
-                            fallbacks.movies.add(streamableMovie)
-                            logger.info(
-                                "Movie {} not available to {} on any of their streaming services and we're not yet in desperation mode {} - filtering it out",
-                                movie.title,
-                                movieBuff.name,
-                                movieBuff.streamingServices.sortedBy { it.name }.joinToString(", ")
-                            )
-                            null
-                        }
-                    }
-                } catch (_: Exception) {
-                    null
-                }
-            }
-        return StreamableMovies(streamableMovieList)
     }
 
     /**
@@ -427,7 +348,7 @@ class MovieFinderAgent(
         val recommendedMovies = allStreamableMovies(context)
         return StreamableMoviesWithTrailers(
             movies = context.parallelMap(recommendedMovies, 15) { movie ->
-                val trailerUrl = findTrailer(movie, context)
+                val trailerUrl = movieLookup.findTrailer(movie.movie.title, movie.movie.year, context.ai())
                 StreamableMovieWithTrailer(
                     movie = movie.movie,
                     availableStreamingOptions = movie.availableStreamingOptions,
@@ -506,17 +427,6 @@ class MovieFinderAgent(
             writeup = writeup.writeup,
             movies = streamableMovies.movies,
         )
-    }
-
-    private fun findTrailer(movie: StreamableMovie, context: OperationContext): String {
-        val pr = context.promptRunner().withToolGroup(CoreToolGroups.WEB)
-        val id = pr.generateText(
-            """
-                What is the YouTube id for the trailer of the movie ${movie.movie.title} (${movie.movie.year})?
-                Return just the id, nothing else.               
-                """.trimIndent()
-        ).trim()
-        return id
     }
 
     companion object {
