@@ -3,11 +3,11 @@ package com.embabel.movie.chatbot
 import com.embabel.agent.api.channel.MessageOutputChannelEvent
 import com.embabel.agent.api.channel.OutputChannel
 import com.embabel.agent.api.channel.OutputChannelEvent
-import com.embabel.agent.api.identity.SimpleUser
 import com.embabel.chat.AssistantMessage
 import com.embabel.chat.Chatbot
 import com.embabel.chat.Message
 import com.embabel.chat.UserMessage
+import com.embabel.movie.domain.MovieService
 import io.javelit.core.Jt
 import io.javelit.core.Server
 import org.slf4j.LoggerFactory
@@ -25,18 +25,13 @@ import java.util.concurrent.atomic.AtomicReference
 class JavelitChatUI(
     private val chatbot: Chatbot,
     private val properties: ChatbotProperties,
+    private val movieService: MovieService,
 ) {
     private val logger = LoggerFactory.getLogger(JavelitChatUI::class.java)
     private val serverRef = AtomicReference<Server>()
 
-    companion object {
-        private val ANONYMOUS_USER = SimpleUser(
-            "anonymous",
-            "Anonymous User",
-            "anonymous",
-            null
-        )
-    }
+    private val user = movieService.findByUsername("Rod") ?: error("User 'Rod' not found in MovieService")
+
 
     fun start(openBrowser: Boolean = true): String {
         val port = properties.uiPort
@@ -85,7 +80,7 @@ class JavelitChatUI(
         val chatSession = sessionState.computeIfAbsent("chatSession") {
             val queue = ArrayBlockingQueue<Message>(10)
             val outputChannel = QueueingOutputChannel(queue)
-            val session = chatbot.createSession(ANONYMOUS_USER, outputChannel, UUID.randomUUID().toString())
+            val session = chatbot.createSession(user, outputChannel, UUID.randomUUID().toString())
             sessionState["responseQueue"] = queue
             session
         } as com.embabel.chat.ChatSession
@@ -104,9 +99,11 @@ class JavelitChatUI(
                 is UserMessage -> Jt.markdown(":bust_in_silhouette: **You:** ${message.content}")
                     .key("msg-$i")
                     .use(msgContainer)
+
                 is AssistantMessage -> Jt.markdown(":robot: **Flicker:** ${message.content}")
                     .key("msg-$i")
                     .use(msgContainer)
+
                 else -> {} // Ignore system messages
             }
         }

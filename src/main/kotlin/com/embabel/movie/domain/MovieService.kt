@@ -16,6 +16,10 @@ interface MovieBuffRepository : JpaRepository<MovieBuff, String> {
 
     fun findByDisplayName(displayName: String): MovieBuff?
 
+    fun findByUsername(username: String): MovieBuff?
+
+    fun findByEmail(id: String): MovieBuff? = findById(id).orElse(null)
+
 }
 
 interface MovieRepository : JpaRepository<Movie, String> {
@@ -39,13 +43,10 @@ class MovieService(
         return movieBuffRepository.findById(email).orElse(null)
     }
 
-    override fun findById(id: String): MovieBuff? {
-        TODO("Not yet implemented")
-    }
+    override fun findById(id: String): MovieBuff? = movieBuffRepository.findById(id).orElse(null)
 
-    override fun findByUsername(username: String): MovieBuff? {
-        TODO("Not yet implemented")
-    }
+    override fun findByUsername(username: String): MovieBuff? =
+        movieBuffRepository.findByUsername(username)
 
     @Transactional
     override fun provisionUser(userInfo: User): MovieBuff {

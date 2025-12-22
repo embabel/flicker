@@ -31,10 +31,7 @@ import com.embabel.agent.prompt.persona.Persona
 import com.embabel.common.ai.model.LlmOptions
 import com.embabel.common.ai.model.ModelSelectionCriteria.Companion.byName
 import com.embabel.movie.domain.MovieBuff
-import com.embabel.movie.service.MovieLookup
-import com.embabel.movie.service.MovieResponse
-import com.embabel.movie.service.StreamableMovie
-import com.embabel.movie.service.StreamingOption
+import com.embabel.movie.service.*
 import com.fasterxml.jackson.annotation.JsonPropertyDescription
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -49,7 +46,7 @@ data class MovieRequest(
 
 data class DecoratedMovieBuff(
     val movieBuff: MovieBuff,
-    val tasteProfile: String,
+    val tasteProfile: TasteProfile,
 )
 
 data class SuggestedMovieTitles(
@@ -147,6 +144,7 @@ data class MovieFinderConfig(
 )
 class MovieFinderAgent(
     private val movieLookup: MovieLookup,
+    private val aiHelpers: AiHelpers,
     private val config: MovieFinderConfig,
 ) {
 
@@ -169,19 +167,11 @@ class MovieFinderAgent(
         movieBuff: MovieBuff,
         context: OperationContext,
     ): DecoratedMovieBuff {
-        val tasteProfile = context.promptRunner(config.llm) generateText
-                """
-                ${movieBuff.name} is a movie lover with hobbies of ${movieBuff.hobbies.joinToString(", ")}
-                They have rated the following movies out of 10:
-                ${
-                    movieBuff.randomRatings(50).joinToString("\n") {
-                        "${it.movie.title}: ${it.rating}"
-                    }
-                }
-
-                Return a summary of their taste profile as you understand it,
-                in ${config.tasteProfileWordCount} words or less. Cover what they like and don't like.
-                """.trimIndent()
+        val tasteProfile = aiHelpers.analyzeTasteProfile(
+            movieBuff = movieBuff,
+            ai = context.ai(),
+            tasteProfileWordCount = config.tasteProfileWordCount,
+        )
         logger.info("Analyzed taste profile for {}:\n{}", movieBuff.name, tasteProfile)
         return DecoratedMovieBuff(
             movieBuff = movieBuff,

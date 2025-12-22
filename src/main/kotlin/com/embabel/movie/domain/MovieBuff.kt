@@ -54,6 +54,7 @@ data class MovieBuff(
     fun randomRatings(n: Int): List<MovieRating> {
         return movieRatings.shuffled().take(n)
     }
+
 }
 
 @Entity
