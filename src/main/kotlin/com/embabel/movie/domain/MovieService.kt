@@ -1,6 +1,7 @@
 package com.embabel.movie.domain
 
-import com.embabel.agent.identity.UserService
+import com.embabel.agent.api.identity.User
+import com.embabel.agent.api.identity.UserService
 import com.embabel.movie.agent.OneThroughTen
 import com.embabel.movie.service.OmdbClient
 import org.slf4j.LoggerFactory
@@ -38,9 +39,22 @@ class MovieService(
         return movieBuffRepository.findById(email).orElse(null)
     }
 
+    override fun findById(id: String): MovieBuff? {
+        TODO("Not yet implemented")
+    }
+
+    override fun findByUsername(username: String): MovieBuff? {
+        TODO("Not yet implemented")
+    }
+
     @Transactional
-    override fun provisionUser(email: String, name: String): MovieBuff {
-        val movieBuff = MovieBuff(email = email, name = name, countryCode = "au")
+    override fun provisionUser(userInfo: User): MovieBuff {
+        val movieBuff = MovieBuff(
+            email = userInfo.email!!,
+            username = userInfo.username,
+            displayName = userInfo.displayName,
+            countryCode = "au",
+        )
         return movieBuffRepository.save(movieBuff).also {
             logger.info("Provisioned new movie buff: {}", it)
         }

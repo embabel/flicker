@@ -1,7 +1,8 @@
 package com.embabel.agent.web.security
 
-import com.embabel.agent.identity.User
-import com.embabel.agent.identity.UserService
+import com.embabel.agent.api.identity.SimpleUser
+import com.embabel.agent.api.identity.User
+import com.embabel.agent.api.identity.UserService
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class EmbabelOAuth2UserService(
-    private val userService: UserService<*>,
+    private val userService: UserService<User>,
 ) : DefaultOAuth2UserService() {
 
     override fun loadUser(userRequest: OAuth2UserRequest): OAuth2User {
@@ -25,7 +26,14 @@ class EmbabelOAuth2UserService(
             ?: throw OAuth2AuthenticationException("Name not found in OAuth2 response")
 
         // Check if user is authorized in your database
-        val embabelUser = userService.findByEmail(email) ?: userService.provisionUser(email, name)
+        val embabelUser = userService.findByEmail(email) ?: userService.provisionUser(
+            SimpleUser(
+                username = name,
+                displayName = name,
+                email = email,
+                id = java.util.UUID.randomUUID().toString(),
+            )
+        )
 
 //        if (!authorizedUser.isActive) {
 //            throw OAuth2AuthenticationException("User account is inactive: $email")
@@ -51,7 +59,7 @@ class EmbabelAuth2User(
     private val authorities: Collection<GrantedAuthority>
 ) : OAuth2User {
 
-    override fun getName(): String = user.name
+    override fun getName(): String = user.displayName
 
     override fun getAttributes(): Map<String, Any> = attributes
 

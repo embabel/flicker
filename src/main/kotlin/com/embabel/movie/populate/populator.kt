@@ -44,7 +44,8 @@ class StartupDataInitializer(
         val name = "Rod"
         if (movieService.findMovieBuffByName(name) == null) {
             val rod = MovieBuff(
-                name = "Rod",
+                username = "Rod",
+                displayName = "Rod Johnson",
                 email = "johnsonroda@gmail.com",
                 hobbies = listOf("Travel", "Skiing", "Chess", "Hiking", "Reading"),
                 countryCode = "au",

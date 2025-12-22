@@ -18,8 +18,8 @@ package com.embabel.movie
 import com.embabel.agent.api.common.OperationContext
 import com.embabel.movie.agent.MovieFinderAgent
 import com.embabel.movie.agent.MovieFinderConfig
+import com.embabel.movie.domain.MovieBuff
 import com.embabel.movie.domain.MovieBuffRepository
-import com.embabel.movie.populate.rod
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -27,9 +27,17 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import java.util.*
 
 class MovieFinderTest {
+
+    private fun testMovieBuff() = MovieBuff(
+        email = "rod@example.com",
+        username = "rod",
+        displayName = "Rod Johnson",
+        countryCode = "US",
+        hobbies = listOf("hiking", "reading"),
+        about = "Loves classic films"
+    )
 
     @Nested
     inner class AnalyzeTasteProfile {
@@ -37,13 +45,12 @@ class MovieFinderTest {
         @Test
         fun `test analyze taste profile`() {
             val repository = mockk<MovieBuffRepository>()
-            every { repository.findById(any()) } returns Optional.of(rod())
-            every { repository.findAll() } returns listOf(rod())
+            every { repository.findAll() } returns listOf(testMovieBuff())
             val mockOperationContext = mockk<OperationContext>()
             val prompt = slot<String>()
             every { mockOperationContext.promptRunner(any()).generateText(capture(prompt)) } returns "test"
             val movieFinder =
-                MovieFinderAgent(mockk(), mockk(), repository, MovieFinderConfig())
+                MovieFinderAgent(mockk(), mockk(), MovieFinderConfig())
             val movieBuff = repository.findAll().first()
 
             val dmb = movieFinder.analyzeTasteProfile(movieBuff, mockOperationContext)

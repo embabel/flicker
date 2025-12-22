@@ -15,3 +15,5 @@ embabel-agent-api/src/main/resources/mcp/**
 .mcp.env
 
 MovieFinder.iml
+
+.claude

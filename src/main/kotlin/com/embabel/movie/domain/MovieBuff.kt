@@ -1,6 +1,6 @@
 package com.embabel.movie.domain
 
-import com.embabel.agent.identity.User
+import com.embabel.agent.api.identity.User
 import com.embabel.agent.prompt.persona.Persona
 import com.embabel.common.core.types.Timestamped
 import com.embabel.movie.agent.OneThroughTen
@@ -13,7 +13,8 @@ import java.time.Instant
 data class MovieBuff(
     @Id
     override val email: String,
-    override val name: String,
+    override val username: String,
+    override val displayName: String,
     @OneToMany(fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
     val movieRatings: MutableList<MovieRating> = mutableListOf(),
     val countryCode: String,
@@ -35,6 +36,10 @@ data class MovieBuff(
     )
     val streamingServices: MutableList<StreamingService> = mutableListOf(),
 ) : User {
+
+    override val id = email
+
+    val name get() = displayName
 
     fun addRating(movieRating: MovieRating) {
         // Update any existing rating

@@ -22,12 +22,12 @@ import com.embabel.agent.api.annotation.Condition
 import com.embabel.agent.api.common.OperationContext
 import com.embabel.agent.api.common.create
 import com.embabel.agent.api.common.createObject
-import com.embabel.agent.config.models.OpenAiModels
+import com.embabel.agent.api.event.ProgressUpdateEvent
+import com.embabel.agent.api.models.OpenAiModels
 import com.embabel.agent.core.CoreToolGroups
-import com.embabel.agent.core.all
 import com.embabel.agent.core.last
+import com.embabel.agent.core.objectsOfType
 import com.embabel.agent.domain.library.HasContent
-import com.embabel.agent.event.ProgressUpdateEvent
 import com.embabel.agent.prompt.persona.Persona
 import com.embabel.common.ai.model.LlmOptions
 import com.embabel.common.ai.model.ModelSelectionCriteria.Companion.byName
@@ -286,7 +286,7 @@ class MovieFinderAgent(
     }
 
     private fun areWeDesperate(context: OperationContext): Boolean {
-        val suggestions = context.all<SuggestedMovieTitles>().flatMap { it.titles }.size
+        val suggestions = context.objectsOfType<SuggestedMovieTitles>().flatMap { it.titles }.size
         return suggestions >= config.bailAfterSuggestions
     }
 
@@ -387,7 +387,7 @@ class MovieFinderAgent(
         context: OperationContext,
     ): List<StreamableMovie> {
         val streamableMovies = context
-            .all<StreamableMovies>()
+            .objectsOfType<StreamableMovies>()
             .flatMap { it.movies }
             .distinctBy { it.movie.imdbId }
         context.processContext.onProcessEvent(
@@ -416,7 +416,7 @@ class MovieFinderAgent(
         context: OperationContext,
     ): List<String> {
         return context
-            .all<SuggestedMovieTitles>()
+            .objectsOfType<SuggestedMovieTitles>()
             .flatMap { it.titles } + allStreamableMovies(context).map { it.movie.title }
             .distinct()
             .sorted()
