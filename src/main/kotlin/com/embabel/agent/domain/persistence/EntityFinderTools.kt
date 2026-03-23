@@ -1,6 +1,6 @@
 package com.embabel.agent.domain.persistence
 
-import com.embabel.agent.api.annotation.waitFor
+import com.embabel.agent.core.hitl.waitFor
 import com.embabel.agent.api.common.PromptRunner
 import com.embabel.agent.api.common.createObjectIfPossible
 import com.embabel.agent.core.hitl.ConfirmationRequest
