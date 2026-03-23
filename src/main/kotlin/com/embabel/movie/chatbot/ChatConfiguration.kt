@@ -32,7 +32,7 @@ class ChatConfiguration {
     fun chatbot(agentPlatform: AgentPlatform): Chatbot {
         return AgentProcessChatbot.utilityFromPlatform(
             agentPlatform,
-            Verbosity().showPrompts()
+            verbosity = Verbosity().showPrompts()
         )
     }
 }

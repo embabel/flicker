@@ -1,7 +1,7 @@
 package com.embabel.movie.domain
 
 import com.embabel.agent.api.identity.User
-import com.embabel.agent.prompt.persona.Persona
+import com.embabel.agent.prompt.persona.PersonaSpec
 import com.embabel.common.core.types.Timestamped
 import com.embabel.movie.agent.OneThroughTen
 import jakarta.persistence.*
@@ -110,5 +110,4 @@ data class MovieGuide(
     override val persona: String,
     override val voice: String,
     override val objective: String,
-    override val role: String?,
-) : Persona
+) : PersonaSpec

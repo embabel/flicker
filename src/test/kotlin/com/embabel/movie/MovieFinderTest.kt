@@ -15,16 +15,15 @@
  */
 package com.embabel.movie
 
-import com.embabel.agent.api.common.OperationContext
+import com.embabel.agent.test.unit.FakeOperationContext
 import com.embabel.movie.agent.MovieFinderAgent
 import com.embabel.movie.agent.MovieFinderConfig
 import com.embabel.movie.domain.MovieBuff
 import com.embabel.movie.domain.MovieBuffRepository
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.slot
+import com.embabel.movie.service.AiHelpers
+import com.embabel.movie.service.TasteProfile
+import io.mockk.*
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
@@ -46,25 +45,19 @@ class MovieFinderTest {
         fun `test analyze taste profile`() {
             val repository = mockk<MovieBuffRepository>()
             every { repository.findAll() } returns listOf(testMovieBuff())
-            val mockOperationContext = mockk<OperationContext>()
-            val prompt = slot<String>()
-            every { mockOperationContext.promptRunner(any()).generateText(capture(prompt)) } returns "test"
+            val fakeContext = FakeOperationContext()
+            val tasteProfile = TasteProfile("Loves noir and complex plots")
+            val aiHelpers = mockk<AiHelpers>()
+            val capturedMovieBuff = slot<MovieBuff>()
+            every { aiHelpers.analyzeTasteProfile(capture(capturedMovieBuff), any(), any()) } returns tasteProfile
             val movieFinder =
-                MovieFinderAgent(mockk(), mockk(), MovieFinderConfig())
+                MovieFinderAgent(mockk(), aiHelpers, MovieFinderConfig())
             val movieBuff = repository.findAll().first()
 
-            val dmb = movieFinder.analyzeTasteProfile(movieBuff, mockOperationContext)
+            val dmb = movieFinder.analyzeTasteProfile(movieBuff, fakeContext)
             assertEquals(movieBuff, dmb.movieBuff)
-            assertTrue(
-                prompt.captured.contains(movieBuff.name),
-                "Prompt should contain movie buff name '${movieBuff.name}': ${prompt.captured}"
-            )
-            movieBuff.hobbies.forEach { hobby ->
-                assertTrue(
-                    prompt.captured.contains(hobby),
-                    "Prompt should contain movie buff about '${movieBuff.about}': ${prompt.captured}"
-                )
-            }
+            assertEquals(tasteProfile, dmb.tasteProfile)
+            assertEquals(movieBuff, capturedMovieBuff.captured)
         }
 
     }
